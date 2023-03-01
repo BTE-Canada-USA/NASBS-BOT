@@ -147,19 +147,19 @@ export default new Command({
 
             await i.reply({
                 embeds: [
-                    new Discord.MessageEmbed()
-                        .setTitle(
-                            `Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!`
-                        )
-                        .setDescription(
-                            `**Current rank:** ${guildData.rank3.name}\n\n**Progress towards ${
-                                guildData.rank4.name
-                            }:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}**/${
-                                guildData.rank4.points
-                            }** points\n${
-                                largeOrMediums[0].points
-                            }**/${200}** points from Good/Excellent quality Medium/Large builds`
-                        )
+                    new Discord.MessageEmbed().setDescription(
+                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${
+                            guildData.emoji
+                        } WOOHOOO!**\n\n**Current rank:** ${
+                            guildData.rank3.name
+                        }\n\n**Progress towards ${
+                            guildData.rank4.name
+                        }:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}**/${
+                            guildData.rank4.points
+                        }** points\n${
+                            largeOrMediums[0].points
+                        }**/${200}** points from Good/Excellent quality Medium/Large builds`
+                    )
                 ]
             })
         } else if (member.roles.cache.get(guildData.rank2.id)) {
@@ -209,19 +209,17 @@ export default new Command({
 
             await i.reply({
                 embeds: [
-                    new Discord.MessageEmbed()
-                        .setTitle(
-                            `Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!`
-                        )
-                        .setDescription(
-                            `**Current rank:** ${guildData.rank2.name}\n\n**Progress towards ${
-                                guildData.rank3.name
-                            }:**\n${userData.pointsTotal}**/${
-                                guildData.rank3.points
-                            }** points\n${
-                                largeOrMediums[0].points
-                            }**/${100}** points from Good/Excellent quality Medium builds`
-                        )
+                    new Discord.MessageEmbed().setDescription(
+                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${
+                            guildData.emoji
+                        } WOOHOOO!**\n\n**Current rank:** ${
+                            guildData.rank2.name
+                        }\n\n**Progress towards ${guildData.rank3.name}:**\n${
+                            userData.pointsTotal
+                        }**/${guildData.rank3.points}** points\n${
+                            largeOrMediums[0].points
+                        }**/${100}** points from Good/Excellent quality Medium builds`
+                    )
                 ]
             })
         } else if (member.roles.cache.get(guildData.rank1.id)) {
