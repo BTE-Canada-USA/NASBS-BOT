@@ -11,11 +11,42 @@ export default new Command({
             description: `Show NASBS leaderboard for all teams`,
             required: false,
             optionType: 'boolean'
+        },
+        {
+            name: 'metric',
+            description: 'What metric to rank people by (default is points)',
+            choices: [
+                Array(2).fill('points'),
+                Array(2).fill('buildings'),
+                Array(2).fill('roads'),
+                Array(2).fill('land')
+            ],
+            required: false,
+            optionType: 'string'
         }
     ],
     async run(i, client) {
         const guild = client.guildsData.get(i.guild.id)
         const options = i.options
+        const metric: string = options.getString('metric') || 'points'
+        // convert metric to the name in the database
+        const dbAttrName = (() => {
+            switch (metric) {
+                case 'points': return 'pointsTotal'
+                case 'buildings': return 'buildingCount'
+                case 'roads': return 'roadKMs'
+                case 'land': return 'sqm'
+            }
+        })()
+        // get units of the selected metric
+        const units = (() => {
+            switch (metric) {
+                case 'points': return 'points'
+                case 'buildings': return 'buildings'
+                case 'roads': return 'km'
+                case 'land': return 'm²'
+            }
+        })()
         const pageLength = 10
         let page = 1
         let users
@@ -28,10 +59,10 @@ export default new Command({
                 {
                     $group: {
                         _id: '$id',
-                        pointsTotal: { $sum: '$pointsTotal' }
+                        count: { $sum: `$${dbAttrName}` }
                     }
                 },
-                { $sort: { pointsTotal: -1 } }
+                { $sort: { count: -1 } }
             ])
         } else {
             guildName = guild.name
@@ -41,10 +72,10 @@ export default new Command({
                 {
                     $group: {
                         _id: '$id',
-                        pointsTotal: { $sum: '$pointsTotal' }
+                        count: { $sum: `$${dbAttrName}` }
                     }
                 },
-                { $sort: { pointsTotal: -1 } }
+                { $sort: { count: -1 } }
             ])
         }
 
@@ -67,13 +98,19 @@ export default new Command({
 
             for (let i = page * pageLength - pageLength; i < page * pageLength; i++) {
                 if (!users[i]) break
-                content += `**${i + 1}.** <@${users[i]._id}>: ${parseFloat(
-                    users[i].pointsTotal
-                ).toFixed(1)}\n\n`
+                const value = (() => {
+                    if (/[\.]/.test(users[i].count)) {  // if the value is a float
+                        return parseFloat(users[i].count).toFixed(1)
+                    } else {  // if the value is an int
+                        return users[i].count
+                    }
+                })()
+                content += `**${i + 1}.** <@${users[i]._id}>: ${value} ${units}\n\n`
             }
 
+            const capitalizedMetric = metric.charAt(0).toUpperCase() + metric.slice(1)  // Capitalize first letter of metric
             const embed = new Discord.MessageEmbed()
-                .setTitle(`Points leaderboard for ${guildName}!`)
+                .setTitle(`${capitalizedMetric} leaderboard for ${guildName}!`)
                 .setDescription(content)
 
             return embed
