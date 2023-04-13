@@ -15,11 +15,12 @@ export default new Command({
         {
             name: 'metric',
             description: 'What metric to rank people by (default is points)',
+            // the values are the names of each metric in the db, so it can be used directly to query db
             choices: [
-                Array(2).fill('points'),
-                Array(2).fill('buildings'),
-                Array(2).fill('roads'),
-                Array(2).fill('land')
+                ['Points', 'Points'],
+                ['Buildings', 'Buildings'],
+                ['Roads', 'Roads'],
+                ['Land', 'Land']
             ],
             required: false,
             optionType: 'string'
@@ -28,25 +29,36 @@ export default new Command({
     async run(i, client) {
         const guild = client.guildsData.get(i.guild.id)
         const options = i.options
-        const metric: string = options.getString('metric') || 'points'
+        const metricName: string = options.getString('metric') || 'Points'
+
         // convert metric to the name in the database
         const dbAttrName = (() => {
-            switch (metric) {
-                case 'points': return 'pointsTotal'
-                case 'buildings': return 'buildingCount'
-                case 'roads': return 'roadKMs'
-                case 'land': return 'sqm'
+            switch (metricName) {
+                case 'Points':
+                    return 'pointsTotal'
+                case 'Buildings':
+                    return 'buildingCount'
+                case 'Roads':
+                    return 'roadKMs'
+                case 'Land':
+                    return 'sqm'
             }
         })()
+
         // get units of the selected metric
         const units = (() => {
-            switch (metric) {
-                case 'points': return 'points'
-                case 'buildings': return 'buildings'
-                case 'roads': return 'km'
-                case 'land': return 'm²'
+            switch (metricName) {
+                case 'Points':
+                    return 'points'
+                case 'Buildings':
+                    return 'buildings'
+                case 'Roads':
+                    return 'km'
+                case 'Land':
+                    return 'm²'
             }
         })()
+
         const pageLength = 10
         let page = 1
         let users
@@ -92,25 +104,27 @@ export default new Command({
             .setLabel('Next page')
             .setStyle('PRIMARY')
 
-        // create the embed for any page of leaderboard
+        // create the embed for a page of leaderboard
         function makeEmbed(page) {
             let content = ''
 
             for (let i = page * pageLength - pageLength; i < page * pageLength; i++) {
                 if (!users[i]) break
                 const value = (() => {
-                    if (/[\.]/.test(users[i].count)) {  // if the value is a float
+                    if (/[\.]/.test(users[i].count)) {
+                        // if the value is a float
                         return parseFloat(users[i].count).toFixed(1)
-                    } else {  // if the value is an int
+                    } else {
+                        // if the value is an int
                         return users[i].count
                     }
                 })()
+                // add the next line to this page's msg content
                 content += `**${i + 1}.** <@${users[i]._id}>: ${value} ${units}\n\n`
             }
 
-            const capitalizedMetric = metric.charAt(0).toUpperCase() + metric.slice(1)  // Capitalize first letter of metric
             const embed = new Discord.MessageEmbed()
-                .setTitle(`${capitalizedMetric} leaderboard for ${guildName}!`)
+                .setTitle(`${metricName} leaderboard for ${guildName}!`)
                 .setDescription(content)
 
             return embed
