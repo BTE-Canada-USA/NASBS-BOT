@@ -58,7 +58,7 @@ export default new Command({
         }
 
         // Check if it already got declined / purged
-        const isRejected = await checkIfRejected(submissionMsg)
+        const isRejected = await checkIfRejected(submissionId)
 
         // Check if it already got accepted
         const originalSubmission = await Submission.findOne({
