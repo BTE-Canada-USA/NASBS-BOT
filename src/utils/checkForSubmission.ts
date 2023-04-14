@@ -6,7 +6,7 @@ import Submission from '../struct/Submission.js'
  * @param {string} submissionId - The message id of the submission
  * @returns true if the submission is in the submissions db
  */
-async function checkIfAccepted(submissionId) {
+async function checkIfAccepted(submissionId: string) {
     const submission = await Submission.findOne({
         _id: submissionId
     }).lean()
@@ -21,7 +21,7 @@ async function checkIfAccepted(submissionId) {
  * @param {string} submissionId - The message id of the submission
  * @returns true if the submission is in the rejections db
  */
-async function checkIfRejected(submissionId) {
+async function checkIfRejected(submissionId: string) {
     const submission = await Rejection.findOne({
         _id: submissionId
     }).lean()

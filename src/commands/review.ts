@@ -58,7 +58,7 @@ export default new Command({
         }
 
         // Check if it already got declined / purged
-        const isRejected = await checkIfRejected(submissionMsg)
+        const isRejected = await checkIfRejected(submissionId)
 
         // Check if it already got accepted
         const originalSubmission = await Submission.findOne({
@@ -234,14 +234,19 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
-            if (size == 2) {
-                sizeName = 'small'
-            } else if (size == 5) {
-                sizeName = 'medium'
-            } else if (size == 10) {
-                sizeName = 'large'
-            } else if (size == 20) {
-                sizeName = 'monumental'
+            switch (size) {
+                case 2:
+                    sizeName = 'small'
+                    break
+                case 5:
+                    sizeName = 'medium'
+                    break
+                case 10:
+                    sizeName = 'large'
+                    break
+                case 20:
+                    sizeName = 'monumental'
+                    break
             }
 
             return review(
