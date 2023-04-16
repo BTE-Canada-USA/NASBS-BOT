@@ -226,11 +226,11 @@ export default new Command({
             // check progress towards SENIOR BUILDER
             await i.reply({
                 embeds: [
-                    new Discord.MessageEmbed()
-                        .setTitle(`Progress of <@${userId}> in ${guildName} WOOHOOO!`)
-                        .setDescription(
-                            `**Current rank:** ${guildData.rank1.name}\n\n**Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
-                        )
+                    new Discord.MessageEmbed().setDescription(
+                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n
+                        **Current rank:** ${guildData.rank1.name}\n\n
+                        **Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
+                    )
                 ]
             })
         } else {
