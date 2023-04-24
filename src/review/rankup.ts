@@ -23,6 +23,12 @@ async function doRankup(member, emoji, name, msg, roleId, i) {
 
 // check if builder qualifies for rankup
 async function checkForRankup(member, points, guild, i) {
+    // if cant get the member, they must not be in server so cant rankup
+    if (!member) {
+        return i.followUp('member is no longer in this server')
+    }
+
+    // otherwise, proceed with checking for rankup
     if (
         points >= guild.rank2.points &&
         points < guild.rank3.points &&
@@ -41,7 +47,6 @@ async function checkForRankup(member, points, guild, i) {
         points < guild.rank4.points &&
         !member.roles.cache.get(guild.rank3.id)
     ) {
-        console.log(member)
         // check if builder has 50 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
         const userPoints = await Submission.aggregate([
             {

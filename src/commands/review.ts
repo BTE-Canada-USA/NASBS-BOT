@@ -100,6 +100,9 @@ export default new Command({
 
         // review function used by all subcommands
         async function review(reply, data, countType, countValue) {
+            // get member using fetch, not from msg.member because thats bad
+            const member = await i.guild.members.fetch(userId)
+
             if (
                 edit &&
                 originalSubmission &&
@@ -136,7 +139,7 @@ export default new Command({
                             return countValue - originalSubmission[countType]
                         }
                     })()
-                    const userId = submissionMsg.author.id
+
                     await User.updateOne(
                         { id: userId, guildId: i.guild.id },
                         {
@@ -165,8 +168,7 @@ export default new Command({
                     // send dm if user has it enabled
                     const dmsEnabled = await areDmsEnabled(userId)
 
-                    if (dmsEnabled) {
-                        const member = await i.guild.members.fetch(userId)
+                    if (dmsEnabled && member) {
                         const dm = await member.createDM()
                         await dm
                             .send({
@@ -184,7 +186,7 @@ export default new Command({
                             .catch((err) => {
                                 console.log(err)
                                 i.followUp(
-                                    `${i.user} has dms turned off or something went wrong while sending the dm! ${err}`
+                                    `<@${userId}> has dms turned off or something went wrong while sending the dm! ${err}`
                                 )
                             })
                     }
@@ -210,9 +212,8 @@ export default new Command({
                     guildId: i.guild.id
                 }).lean()
 
-                await checkForRankup(submissionMsg.member, current.pointsTotal, guildData, i)
+                await checkForRankup(member, current.pointsTotal, guildData, i)
             } catch (err) {
-                console.log(err)
                 i.followUp(`RANKUP ERROR HAPPENED! ${err}`)
             }
         }
