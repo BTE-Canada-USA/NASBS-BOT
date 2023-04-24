@@ -101,7 +101,12 @@ export default new Command({
         // review function used by all subcommands
         async function review(reply, data, countType, countValue) {
             // get member using fetch, not from msg.member because thats bad
-            const member = await i.guild.members.fetch(userId)
+            let member
+            try {
+                member = await i.guild.members.fetch(userId)
+            } catch (e) {
+                member == null
+            }
 
             if (
                 edit &&
