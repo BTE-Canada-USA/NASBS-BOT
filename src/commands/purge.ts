@@ -4,6 +4,7 @@ import Submission from '../struct/Submission.js'
 import User from '../struct/User.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
+import areDmsEnabled from '../utils/areDmsEnabled.js'
 
 export default new Command({
     name: 'purge',
@@ -100,27 +101,36 @@ export default new Command({
             { upsert: true }
         ).lean()
 
-        i.followUp(`PURGED SUBMISSION [Link](${submissionMsg.url})`)
-
-        // Send a DM to the user
-        const builder = await client.users.fetch(submissionMsg.author.id)
-        const dm = await builder.createDM()
-
-        const embed = new Discord.MessageEmbed()
-            .setTitle(`Your recent build submission has been removed.`)
-            .setDescription(
-                `__[Submission link](${submissionMsg.url})__\n\nYou can use this feedback to improve your build then resubmit it to gain points!\n\n\`${feedback}\``
-            )
-
-        await dm.send({ embeds: [embed] }).catch((err) => {
-            return i.followUp(
-                `${builder} has dms turned off or something went wrong while sending the dm! ${err}`
-            )
-        })
-
         // Remove all bot reactions, then add a '❌' reaction
         await submissionMsg.reactions.cache.forEach((reaction) => reaction.remove())
         await submissionMsg.react('❌')
-        return i.followUp('removed and feedback sent :weena!: `' + feedback + '`')
+
+        const dmsEnabled = await areDmsEnabled(userId)
+
+        // Send a DM to the user if user wants dms
+        if (dmsEnabled) {
+            const builder = await client.users.fetch(submissionMsg.author.id)
+            const dm = await builder.createDM()
+
+            const embed = new Discord.MessageEmbed()
+                .setTitle(`Your recent build submission has been removed.`)
+                .setDescription(
+                    `__[Submission link](${submissionMsg.url})__\n\nYou can use this feedback to improve your build then resubmit it to gain points!\n\n\`${feedback}\``
+                )
+
+            await dm.send({ embeds: [embed] }).catch((err) => {
+                return i.followUp(
+                    `${builder} has dms turned off or something went wrong while sending the dm! ${err}`
+                )
+            })
+
+            i.followUp(
+                `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback sent :weena!: \`${feedback}\``
+            )
+        } else {
+            i.followUp(
+                `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback not because this user hates dms :weena!: \`${feedback}\``
+            )
+        }
     }
 })
