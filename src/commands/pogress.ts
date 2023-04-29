@@ -32,7 +32,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `<@${userId}> has not gained any points in ${guildData.emoji} ${guildName} ${guildData.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })

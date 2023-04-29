@@ -124,7 +124,9 @@ export default new Command({
             }
 
             const embed = new Discord.MessageEmbed()
-                .setTitle(`${metricName} leaderboard for ${guildName}!`)
+                .setTitle(
+                    `${metricName} leaderboard for ${guild.emoji} ${guildName} ${guild.emoji}!`
+                )
                 .setDescription(content)
 
             return embed
