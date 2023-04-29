@@ -105,7 +105,7 @@ export default new Command({
             .setStyle('PRIMARY')
 
         // create the embed for a page of leaderboard
-        function makeEmbed(page) {
+        async function makeEmbed(page) {
             let content = ''
 
             for (let i = page * pageLength - pageLength; i < page * pageLength; i++) {
@@ -119,8 +119,14 @@ export default new Command({
                         return users[i].count
                     }
                 })()
+
+                // get user to display their username/#
+                const user = await client.users.fetch(users[i]._id)
+
                 // add the next line to this page's msg content
-                content += `**${i + 1}.** <@${users[i]._id}>: ${value} ${units}\n\n`
+                content += `**${i + 1}.** \`${user.username}#${
+                    user.discriminator
+                }\`: ${value} ${units}\n\n`
             }
 
             const embed = new Discord.MessageEmbed()
@@ -137,12 +143,12 @@ export default new Command({
         // use less than one, because an empty leaderboard has no pages
         if (maxPage <= 1) {
             await i.reply({
-                embeds: [makeEmbed(page)]
+                embeds: [await makeEmbed(page)]
             })
         } else {
             // otherwise, add a next button
             await i.reply({
-                embeds: [makeEmbed(1)],
+                embeds: [await makeEmbed(1)],
                 components: [new MessageActionRow().addComponents(nextButton)]
             })
         }
@@ -166,12 +172,12 @@ export default new Command({
                         // no previous button allowed if its the 1st page (or negative page, error or empty leaderboard)
                         if (page <= 1) {
                             await i.update({
-                                embeds: [makeEmbed(page)],
+                                embeds: [await makeEmbed(page)],
                                 components: [new MessageActionRow().addComponents(nextButton)]
                             })
                         } else {
                             await i.update({
-                                embeds: [makeEmbed(page)],
+                                embeds: [await makeEmbed(page)],
                                 components: [
                                     new MessageActionRow().addComponents(
                                         previousButton,
@@ -185,14 +191,14 @@ export default new Command({
                         // no next button allowed if its the last page
                         if (page == maxPage) {
                             await i.update({
-                                embeds: [makeEmbed(page)],
+                                embeds: [await makeEmbed(page)],
                                 components: [
                                     new MessageActionRow().addComponents(previousButton)
                                 ]
                             })
                         } else {
                             await i.update({
-                                embeds: [makeEmbed(page)],
+                                embeds: [await makeEmbed(page)],
                                 components: [
                                     new MessageActionRow().addComponents(
                                         previousButton,
