@@ -54,8 +54,8 @@ export default new Command({
             return i.reply('you cannnot review your own builds <:bonk:720758421514878998>')
         }
 
-        const userId = submissionMsg.author.id
-        const user = submissionMsg.author
+        const builderId = submissionMsg.author.id
+        const builder = submissionMsg.author
 
         // update submission doc pointstotal
         await Submission.updateOne(
@@ -65,7 +65,7 @@ export default new Command({
 
         // check if user is in db
         const userData = await User.findOne({
-            id: userId,
+            id: builderId,
             guildId: guildData.id
         }).lean()
 
@@ -73,7 +73,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `\`${user.username}#${user.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `\`${builder.username}#${builder.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })
@@ -81,7 +81,7 @@ export default new Command({
 
         // increments user's points by the amount inputted
         await User.updateOne(
-            { id: userId, guildId: i.guild.id },
+            { id: builderId, guildId: i.guild.id },
             {
                 $inc: {
                     pointsTotal: amount
@@ -91,7 +91,7 @@ export default new Command({
         ).lean()
 
         i.reply(
-            `ok updated \`${user.username}#${user.discriminator}\`'s points by ${amount}.\nREMEMBER: USE /REVIEW COMMAND FOR REGULAR SUBMISSION EDITING. THIS IS THE LAST RESORT IF ALL ELSE FAILS. IMMEDIATELY CONSULT ADMINS IF THIS COMMAND WAS USED IN THE WRONG CIRCUMSTANCE`
+            `ok updated \`${builder.username}#${builder.discriminator}\`'s points by ${amount}.\nREMEMBER: USE /REVIEW COMMAND FOR REGULAR SUBMISSION EDITING. THIS IS THE LAST RESORT IF ALL ELSE FAILS. IMMEDIATELY CONSULT ADMINS IF THIS COMMAND WAS USED IN THE WRONG CIRCUMSTANCE`
         )
     }
 })

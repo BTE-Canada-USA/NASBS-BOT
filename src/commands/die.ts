@@ -40,12 +40,12 @@ export default new Command({
             )
         }
 
-        const userId = submissionMsg.author.id
-        const user = submissionMsg.author
+        const builderId = submissionMsg.author.id
+        const builder = submissionMsg.author
 
         // check if user is in db
         const userData = await User.findOne({
-            id: userId,
+            id: builderId,
             guildId: guildData.id
         }).lean()
 
@@ -53,7 +53,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `\`${user.username}#${user.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `\`${builder.username}#${builder.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })
@@ -76,13 +76,13 @@ export default new Command({
 
         // update user doc pointstotal
         await User.updateOne(
-            { id: userId, guildId: i.guild.id },
+            { id: builderId, guildId: i.guild.id },
             { $inc: { pointsTotal: increment } },
             { upsert: true }
         ).lean()
 
         i.reply(
-            `ok added ${complexity} complexity to \`${user.username}#${user.discriminator}\`'s build. [Link](${submissionMsg.url}). DIE!`
+            `ok added ${complexity} complexity to \`${builder.username}#${builder.discriminator}\`'s build. [Link](${submissionMsg.url}). DIE!`
         )
     }
 })

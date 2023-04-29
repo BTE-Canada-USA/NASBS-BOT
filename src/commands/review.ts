@@ -81,7 +81,7 @@ export default new Command({
 
         // set variables shared by all subcommands
         await i.reply('doing stuff...')
-        const user = submissionMsg.author
+        const builder = submissionMsg.author
         const builderId = submissionMsg.author.id
         const bonus = options.getInteger('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
@@ -157,7 +157,9 @@ export default new Command({
                         { upsert: true }
                     ).lean()
 
-                    i.followUp(`EDITED \`${user.username}#${user.discriminator}\` ${reply}`)
+                    i.followUp(
+                        `EDITED \`${builder.username}#${builder.discriminator}\` ${reply}`
+                    )
                 } else {
                     // increment user's total points and building count/sqm/roadKMs
                     await User.updateOne(
@@ -192,7 +194,7 @@ export default new Command({
                             .catch((err) => {
                                 console.log(err)
                                 i.followUp(
-                                    `\`${user.username}#${user.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
+                                    `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                                 )
                             })
                     }
@@ -203,7 +205,7 @@ export default new Command({
                     )
                     await submissionMsg.react('✅')
                     await i.followUp(
-                        `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\n\`${user.username}#${user.discriminator}\` has ${reply}`
+                        `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\n\`${builder.username}#${builder.discriminator}\` has ${reply}`
                     )
                 }
             } catch (err) {
