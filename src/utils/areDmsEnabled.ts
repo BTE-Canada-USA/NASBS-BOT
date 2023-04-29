@@ -1,4 +1,4 @@
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 
 /**
  * check db to see whether user has review dms enabled or not

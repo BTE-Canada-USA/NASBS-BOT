@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
 
-const User = mongoose.model<UserInterface>(
-    'User',
-    new mongoose.Schema<UserInterface>({
+const Builder = mongoose.model<BuilderInterface>(
+    'Builder',
+    new mongoose.Schema<BuilderInterface>({
         id: String,
         guildId: String,
         dm: Boolean,
@@ -13,7 +13,7 @@ const User = mongoose.model<UserInterface>(
     })
 )
 
-export interface UserInterface {
+export interface BuilderInterface {
     id: string
     guildId: string
     dm: boolean
@@ -23,4 +23,4 @@ export interface UserInterface {
     sqm: number
 }
 
-export default User
+export default Builder

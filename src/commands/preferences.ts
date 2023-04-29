@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
 
 export default new Command({

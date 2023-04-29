@@ -1,6 +1,6 @@
 import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
 import { checkForRankup } from '../review/rankup.js'
 import Discord, { Message, MessageReaction, TextChannel } from 'discord.js'

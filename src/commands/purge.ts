@@ -1,7 +1,7 @@
 import Command from '../struct/Command.js'
 import Discord, { TextChannel } from 'discord.js'
 import Submission from '../struct/Submission.js'
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
