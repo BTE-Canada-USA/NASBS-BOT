@@ -227,9 +227,7 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `**Progress of \`${user.username}#${user.discriminator}\` in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n
-                        **Current rank:** ${guildData.rank1.name}\n\n
-                        **Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
+                        `**Progress of \`${user.username}#${user.discriminator}\` in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${guildData.rank1.name}\n\n**Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
                     )
                 ]
             })
