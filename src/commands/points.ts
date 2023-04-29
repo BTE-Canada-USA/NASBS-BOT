@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 import Discord from 'discord.js'
 
 export default new Command({
@@ -51,7 +51,7 @@ export default new Command({
                 return i.reply({
                     embeds: [
                         new Discord.MessageEmbed().setDescription(
-                            `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                            `\`${user.username}#${user.discriminator}\` has not gained any points in any teams yet :frowning2: <:sad_cat:873457028981481473>`
                         )
                     ]
                 })
@@ -82,7 +82,7 @@ export default new Command({
                 return i.reply({
                     embeds: [
                         new Discord.MessageEmbed().setDescription(
-                            `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                            `\`${user.username}#${user.discriminator}\` has not gained any points in ${guild.emoji} ${guildName} ${guild.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
                         )
                     ]
                 })
@@ -117,17 +117,19 @@ export default new Command({
                 new Discord.MessageEmbed()
                     .setTitle(`POINTS!`)
                     .setDescription(
-                        `${user} has :tada: ***${
+                        `\`${user.username}#${user.discriminator}\` has :tada: ***${
                             userData.pointsTotal
-                        }***  :tada: points in ${guildName}!!\n\nNumber of buildings: :house: ***${
+                        }***  :tada: points in ${guild.emoji} ${guildName} ${
+                            guild.emoji
+                        }!!\n\nNumber of buildings: :house: ***${
                             userData.buildingCount || 0
                         }***  :house: !!!\nSqm of land: :corn: ***${
                             userData.sqm || 0
                         }***  :corn:\nKilometers of roads: :motorway: ***${
                             userData.roadKMs || 0
-                        }***  :motorway:\n\nLeaderboard position in ${guildName}: **#${
-                            usersAbove + 1
-                        }**`
+                        }***  :motorway:\n\nLeaderboard position in ${
+                            guild.emoji
+                        } ${guildName} ${guild.emoji}: **#${usersAbove + 1}**`
                     )
             ]
         })

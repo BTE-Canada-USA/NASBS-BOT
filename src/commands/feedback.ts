@@ -41,6 +41,8 @@ export default new Command({
         if (!(await checkIfRejected(submissionId)) && !(await checkIfAccepted(submissionId))) {
             return i.reply('that submission has not been reviewed yet!')
         }
+
+        // get builder now that confirmed its a valid situation
         const builder = await client.users.fetch(submissionMsg.author.id)
         const dm = await builder.createDM()
 

@@ -67,7 +67,7 @@ export default new Command({
 
         await dm.send({ embeds: [embed] }).catch((err) => {
             return i.reply(
-                `${builder} has dms turned off or something went wrong while sending the dm! ${err}`
+                `\`${builder.username}#${builder.discriminator}\`has dms turned off or something went wrong while sending the dm! ${err}`
             )
         })
 

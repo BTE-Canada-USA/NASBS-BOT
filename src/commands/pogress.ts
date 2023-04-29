@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/User.js'
+import User from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord from 'discord.js'
 
@@ -32,7 +32,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `\`${user.username}#${user.discriminator}\` has not gained any points in ${guildData.emoji} ${guildName} ${guildData.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })
@@ -87,9 +87,9 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${
+                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
                             guildData.emoji
-                        } WOOHOOO!**\n\n**Current rank:** ${
+                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
                             guildData.rank4.name
                         }!\n\n**Progress towards ${
                             guildData.rank5.name
@@ -148,9 +148,9 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${
+                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
                             guildData.emoji
-                        } WOOHOOO!**\n\n**Current rank:** ${
+                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
                             guildData.rank3.name
                         }\n\n**Progress towards ${
                             guildData.rank4.name
@@ -210,9 +210,9 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${
+                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
                             guildData.emoji
-                        } WOOHOOO!**\n\n**Current rank:** ${
+                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
                             guildData.rank2.name
                         }\n\n**Progress towards ${guildData.rank3.name}:**\n${
                             userData.pointsTotal
@@ -227,7 +227,7 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `**Progress of <@${userId}> in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n
+                        `**Progress of \`${user.username}#${user.discriminator}\` in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n
                         **Current rank:** ${guildData.rank1.name}\n\n
                         **Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
                     )
@@ -237,7 +237,7 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `<@${userId}> appears to have no builder roles here but has some points?? Something has gone wrong :sob: SEND HELP!!`
+                        `\`${user.username}#${user.discriminator}\` appears to have no builder roles in ${guildData.emoji} ${guildName} ${guildData.emoji} but has some points?? Something has gone wrong :sob: SEND HELP!!`
                     )
                 ]
             })
