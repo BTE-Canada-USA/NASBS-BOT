@@ -109,7 +109,7 @@ export default new Command({
 
         // Send a DM to the user if user wants dms
         if (dmsEnabled) {
-            const builder = await client.users.fetch(submissionMsg.author.id)
+            const builder = submissionMsg.author
             const dm = await builder.createDM()
 
             const embed = new Discord.MessageEmbed()
@@ -120,7 +120,7 @@ export default new Command({
 
             await dm.send({ embeds: [embed] }).catch((err) => {
                 return i.followUp(
-                    `${builder} has dms turned off or something went wrong while sending the dm! ${err}`
+                    `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                 )
             })
 

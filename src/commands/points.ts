@@ -51,7 +51,7 @@ export default new Command({
                 return i.reply({
                     embeds: [
                         new Discord.MessageEmbed().setDescription(
-                            `<@${userId}> has not gained any points in any teams yet :frowning2: <:sad_cat:873457028981481473>`
+                            `\`${user.username}#${user.discriminator}\` has not gained any points in any teams yet :frowning2: <:sad_cat:873457028981481473>`
                         )
                     ]
                 })
@@ -82,7 +82,7 @@ export default new Command({
                 return i.reply({
                     embeds: [
                         new Discord.MessageEmbed().setDescription(
-                            `<@${userId}> has not gained any points in ${guild.emoji} ${guildName} ${guild.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
+                            `\`${user.username}#${user.discriminator}\` has not gained any points in ${guild.emoji} ${guildName} ${guild.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
                         )
                     ]
                 })
@@ -117,9 +117,11 @@ export default new Command({
                 new Discord.MessageEmbed()
                     .setTitle(`POINTS!`)
                     .setDescription(
-                        `${user} has :tada: ***${userData.pointsTotal}***  :tada: points in ${
+                        `\`${user.username}#${user.discriminator}\` has :tada: ***${
+                            userData.pointsTotal
+                        }***  :tada: points in ${guild.emoji} ${guildName} ${
                             guild.emoji
-                        } ${guildName} ${guild.emoji}!!\n\nNumber of buildings: :house: ***${
+                        }!!\n\nNumber of buildings: :house: ***${
                             userData.buildingCount || 0
                         }***  :house: !!!\nSqm of land: :corn: ***${
                             userData.sqm || 0

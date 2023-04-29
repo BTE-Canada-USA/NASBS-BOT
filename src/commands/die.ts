@@ -41,6 +41,7 @@ export default new Command({
         }
 
         const userId = submissionMsg.author.id
+        const user = submissionMsg.author
 
         // check if user is in db
         const userData = await User.findOne({
@@ -52,7 +53,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `\`${user.username}#${user.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })
@@ -81,7 +82,7 @@ export default new Command({
         ).lean()
 
         i.reply(
-            `ok added ${complexity} complexity to <@${userId}>'s build. [Link](${submissionMsg.url}). DIE!`
+            `ok added ${complexity} complexity to \`${user.username}#${user.discriminator}\`'s build. [Link](${submissionMsg.url}). DIE!`
         )
     }
 })

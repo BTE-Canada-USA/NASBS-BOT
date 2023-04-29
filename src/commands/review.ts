@@ -81,14 +81,15 @@ export default new Command({
 
         // set variables shared by all subcommands
         await i.reply('doing stuff...')
-        const userId = submissionMsg.author.id
+        const user = submissionMsg.author
+        const builderId = submissionMsg.author.id
         const bonus = options.getInteger('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
         let pointsTotal
         let submissionData: SubmissionInterface = {
             _id: submissionId,
             guildId: i.guild.id,
-            userId: userId,
+            userId: builderId,
             collaborators: collaborators,
             bonus: bonus,
             edit: edit,
@@ -103,7 +104,7 @@ export default new Command({
             // get member using fetch, not from msg.member because thats bad
             let member
             try {
-                member = await i.guild.members.fetch(userId)
+                member = await i.guild.members.fetch(builderId)
             } catch (e) {
                 member == null
             }
@@ -146,7 +147,7 @@ export default new Command({
                     })()
 
                     await User.updateOne(
-                        { id: userId, guildId: i.guild.id },
+                        { id: builderId, guildId: i.guild.id },
                         {
                             $inc: {
                                 pointsTotal: pointsIncrement,
@@ -156,11 +157,11 @@ export default new Command({
                         { upsert: true }
                     ).lean()
 
-                    i.followUp(`EDITED <@${userId}> ${reply}`)
+                    i.followUp(`EDITED \`${user.username}#${user.discriminator}\` ${reply}`)
                 } else {
                     // increment user's total points and building count/sqm/roadKMs
                     await User.updateOne(
-                        { id: userId, guildId: i.guild.id },
+                        { id: builderId, guildId: i.guild.id },
                         {
                             $inc: {
                                 pointsTotal: parseFloat(pointsTotal),
@@ -171,7 +172,7 @@ export default new Command({
                     ).lean()
 
                     // send dm if user has it enabled
-                    const dmsEnabled = await areDmsEnabled(userId)
+                    const dmsEnabled = await areDmsEnabled(builderId)
 
                     if (dmsEnabled && member) {
                         const dm = await member.createDM()
@@ -191,7 +192,7 @@ export default new Command({
                             .catch((err) => {
                                 console.log(err)
                                 i.followUp(
-                                    `<@${userId}> has dms turned off or something went wrong while sending the dm! ${err}`
+                                    `\`${user.username}#${user.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                                 )
                             })
                     }
@@ -202,7 +203,7 @@ export default new Command({
                     )
                     await submissionMsg.react('✅')
                     await i.followUp(
-                        `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\n<@${userId}> has ${reply}`
+                        `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\n\`${user.username}#${user.discriminator}\` has ${reply}`
                     )
                 }
             } catch (err) {
@@ -213,7 +214,7 @@ export default new Command({
             try {
                 // get new point total for the user in order to check for rankup
                 const current = await User.findOne({
-                    id: userId,
+                    id: builderId,
                     guildId: i.guild.id
                 }).lean()
 

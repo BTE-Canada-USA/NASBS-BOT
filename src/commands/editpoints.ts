@@ -55,6 +55,7 @@ export default new Command({
         }
 
         const userId = submissionMsg.author.id
+        const user = submissionMsg.author
 
         // update submission doc pointstotal
         await Submission.updateOne(
@@ -72,7 +73,7 @@ export default new Command({
             return i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
-                        `<@${userId}> has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
+                        `\`${user.username}#${user.discriminator}\` has not gained any points yet :frowning2: <:sad_cat:873457028981481473>`
                     )
                 ]
             })
@@ -90,7 +91,7 @@ export default new Command({
         ).lean()
 
         i.reply(
-            `ok updated <@${userId}>'s points by ${amount}.\nREMEMBER: USE /REVIEW COMMAND FOR REGULAR SUBMISSION EDITING. THIS IS THE LAST RESORT IF ALL ELSE FAILS. IMMEDIATELY CONSULT ADMINS IF THIS COMMAND WAS USED IN THE WRONG CIRCUMSTANCE`
+            `ok updated \`${user.username}#${user.discriminator}\`'s points by ${amount}.\nREMEMBER: USE /REVIEW COMMAND FOR REGULAR SUBMISSION EDITING. THIS IS THE LAST RESORT IF ALL ELSE FAILS. IMMEDIATELY CONSULT ADMINS IF THIS COMMAND WAS USED IN THE WRONG CIRCUMSTANCE`
         )
     }
 })
