@@ -79,6 +79,11 @@ export default new Command({
             // get array of all users and their global points, sort descending
             users = await User.aggregate([
                 {
+                    $match: {
+                        [dbAttrName]: { $exists: true, $nin: [null, 0] }
+                    }
+                },
+                {
                     $group: {
                         _id: '$id',
                         count: { $sum: `$${dbAttrName}` }
@@ -90,7 +95,12 @@ export default new Command({
             guildName = guild.name
             // or get array of all users in this guild and their points, sort descending
             users = await User.aggregate([
-                { $match: { guildId: guild.id } },
+                {
+                    $match: {
+                        guildId: guild.id,
+                        [dbAttrName]: { $exists: true, $nin: [null, 0] }
+                    }
+                },
                 {
                     $group: {
                         _id: '$id',
