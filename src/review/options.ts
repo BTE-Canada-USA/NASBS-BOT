@@ -141,8 +141,9 @@ const landArgs: CommandArg[] = [
         description: 'Type of land',
         required: true,
         choices: [
-            ['Easy land', 1],
-            ['Harder land', 5]
+            ['Tier 1', 8],
+            ['Tier 2', 10],
+            ['Tier 3', 15]
         ],
         optionType: 'integer'
     },
