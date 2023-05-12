@@ -18,7 +18,7 @@ export default new Command({
         },
         {
             name: 'feedback',
-            description: 'feedback for submission (1000 chars max)',
+            description: 'feedback for submission (1700 chars max)',
             required: true,
             optionType: 'string'
         }
