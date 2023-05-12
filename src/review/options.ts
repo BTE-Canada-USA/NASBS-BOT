@@ -10,7 +10,7 @@ const globalArgs: CommandArg[] = [
     },
     {
         name: 'feedback',
-        description: 'feedback for submission (1000 chars max)',
+        description: 'feedback for submission (1700 chars max)',
         required: true,
         optionType: 'string'
     },
@@ -24,9 +24,9 @@ const globalArgs: CommandArg[] = [
         name: 'bonus',
         description: 'Event and landmark bonuses',
         choices: [
-            ['event', 2],
-            ['landmark', 2],
-            ['landmark & event', 4]
+            ['Event', 2],
+            ['Landmark', 2],
+            ['Both', 4]
         ],
         required: false,
         optionType: 'integer'
@@ -49,10 +49,10 @@ const oneArgs: CommandArg[] = [
         description: 'Building size',
         required: true,
         choices: [
-            ['small', 2],
-            ['medium', 5],
-            ['large', 10],
-            ['monumental', 20]
+            ['Small', 2],
+            ['Medium', 5],
+            ['Large', 10],
+            ['Monumental', 20]
         ],
         optionType: 'integer'
     },
@@ -61,9 +61,9 @@ const oneArgs: CommandArg[] = [
         description: 'Quality',
         required: true,
         choices: [
-            ['bleh', 1],
-            ['decent', 1.5],
-            ['very nice', 2]
+            ['Low', 1],
+            ['Medium', 1.5],
+            ['High', 2]
         ],
         optionType: 'number'
     },
@@ -72,9 +72,9 @@ const oneArgs: CommandArg[] = [
         description: 'complexity',
         required: true,
         choices: [
-            ['simple', 1],
-            ['moderate', 1.5],
-            ['super complex', 2]
+            ['Simple', 1],
+            ['Moderate', 1.5],
+            ['Difficult', 2]
         ],
         optionType: 'number'
     }
@@ -110,9 +110,9 @@ const manyArgs: CommandArg[] = [
         description: 'average complexity from 1-2',
         required: true,
         choices: [
-            ['simple', 1],
-            ['moderate', 1.5],
-            ['super complex', 2]
+            ['Simple', 1],
+            ['Moderate', 1.5],
+            ['Difficult', 2]
         ],
         optionType: 'number'
     }
@@ -130,9 +130,9 @@ const landArgs: CommandArg[] = [
         description: 'Quality',
         required: true,
         choices: [
-            ['bleh', 1],
-            ['decent', 1.5],
-            ['very nice', 2]
+            ['Low', 1],
+            ['Medium', 1.5],
+            ['High', 2]
         ],
         optionType: 'number'
     },
@@ -141,8 +141,9 @@ const landArgs: CommandArg[] = [
         description: 'Type of land',
         required: true,
         choices: [
-            ['Easy land', 1],
-            ['Harder land', 5]
+            ['Tier 1', 8],
+            ['Tier 2', 10],
+            ['Tier 3', 15]
         ],
         optionType: 'integer'
     },
@@ -151,9 +152,9 @@ const landArgs: CommandArg[] = [
         description: 'Complexity of land',
         required: true,
         choices: [
-            ['not complex lol', 1],
-            ['kinda complex', 1.5],
-            ['VERY COMPLEX', 2]
+            ['Simple', 1],
+            ['Moderate', 1.5],
+            ['Difficult', 2]
         ],
         optionType: 'number'
     }
@@ -172,7 +173,7 @@ const roadArgs: CommandArg[] = [
     },
     {
         name: 'distance',
-        description: 'Road distance (kilometers [sorry @ stupid imperial system americans])',
+        description: 'Road distance in kilometers',
         required: true,
         optionType: 'number'
     },
@@ -181,9 +182,9 @@ const roadArgs: CommandArg[] = [
         description: 'Quality',
         required: true,
         choices: [
-            ['bleh', 1],
-            ['decent', 1.5],
-            ['very nice', 2]
+            ['Low', 1],
+            ['Medium', 1.5],
+            ['High', 2]
         ],
         optionType: 'number'
     },
@@ -192,9 +193,9 @@ const roadArgs: CommandArg[] = [
         description: 'Complexity of road',
         required: true,
         choices: [
-            ['flat road', 1],
-            ['bit complex', 1.5],
-            ['COMPLEX', 2]
+            ['Simple', 1],
+            ['Moderate', 1.5],
+            ['Difficult', 2]
         ],
         optionType: 'number'
     }

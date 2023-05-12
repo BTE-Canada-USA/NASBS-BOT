@@ -296,7 +296,7 @@ export default new Command({
             const quality = options.getNumber('quality')
             const complexity = options.getNumber('complexity')
             pointsTotal =
-                (sqm * landtype * complexity * quality * bonus) / 50000 / collaborators
+                (sqm * landtype * complexity * quality * bonus) / 100000 / collaborators
             submissionData = {
                 ...submissionData,
                 sqm: sqm,
