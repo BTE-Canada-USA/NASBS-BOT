@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import User, { BuilderInterface } from '../struct/Builder.js'
 import Discord from 'discord.js'
 
 export default new Command({
@@ -25,9 +25,10 @@ export default new Command({
         const user = options.getUser('user') || i.user
         const global = options.getBoolean('global')
         const userId = user.id
-        let guildName
-        let userData
-        let usersAbove
+        let guildName: string
+        let userData: BuilderInterface
+        let usersAbove: number
+        let usersAboveQuery: { count: number }[]
 
         if (global) {
             // sum user's stats from all guilds
@@ -43,8 +44,7 @@ export default new Command({
                         sqm: { $sum: '$sqm' }
                     }
                 }
-            ])
-            userData = userData[0]
+            ])[0]
 
             // return if user does not exist in db
             if (!userData) {
@@ -58,7 +58,7 @@ export default new Command({
             }
 
             // get global leaderboard position by getting global points of all users, then counting how many users have more global points
-            usersAbove = await User.aggregate([
+            usersAboveQuery = await User.aggregate([
                 {
                     $group: {
                         _id: '$id',
@@ -89,7 +89,7 @@ export default new Command({
             }
 
             // get guild leaderboard position by getting points of all users in guild, then counting how many users have more points
-            usersAbove = await User.aggregate([
+            usersAboveQuery = await User.aggregate([
                 {
                     $match: { guildId: guild.id }
                 },
@@ -106,10 +106,10 @@ export default new Command({
             ])
         }
 
-        if (usersAbove.length == 0) {
+        if (usersAboveQuery.length == 0) {
             usersAbove = 0
         } else {
-            usersAbove = usersAbove[0].count
+            usersAbove = usersAboveQuery[0].count
         }
 
         await i.reply({

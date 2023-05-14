@@ -1,7 +1,7 @@
 import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import Rejection, { RejectionInterface } from '../struct/Rejection.js'
-import Discord, { TextChannel } from 'discord.js'
+import Discord, { Message, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 
 export default new Command({
@@ -22,7 +22,7 @@ export default new Command({
             guildData.submitChannel
         )) as TextChannel
         const submissionId = options.getString('id')
-        let submissionMsg
+        let submissionMsg: Message
         let summary: string
 
         // make sure user knows how to use msg ids
@@ -66,7 +66,7 @@ export default new Command({
             switch (submissionData.submissionType) {
                 case 'ONE':
                     // if type ONE, change number size into a human readable size name
-                    let sizeName
+                    let sizeName: string
                     switch (submissionData.size) {
                         case 2:
                             sizeName = 'small'

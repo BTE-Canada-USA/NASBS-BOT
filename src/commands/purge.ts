@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import Discord, { TextChannel } from 'discord.js'
+import Discord, { Message, TextChannel } from 'discord.js'
 import Submission from '../struct/Submission.js'
 import User from '../struct/Builder.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
@@ -31,7 +31,7 @@ export default new Command({
         const feedback = validateFeedback(options.getString('feedback'))
         const submitChannel = (await client.channels.fetch(guild.submitChannel)) as TextChannel
 
-        let submissionMsg
+        let submissionMsg: Message
 
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
@@ -47,7 +47,7 @@ export default new Command({
         }).lean()
         if (originalSubmission == null) {
             // Check if it already got declined / purged
-            const isRejected = await checkIfRejected(submissionMsg)
+            const isRejected = await checkIfRejected(submissionMsg.id)
             if (isRejected) {
                 return i.reply(
                     'that one has already been rejected <:bonk:720758421514878998>!'

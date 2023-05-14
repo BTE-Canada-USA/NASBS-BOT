@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import Discord, { TextChannel } from 'discord.js'
+import Discord, { Message, TextChannel } from 'discord.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js'
 
@@ -27,7 +27,7 @@ export default new Command({
         const submissionId = options.getString('submissionid')
         const feedback = validateFeedback(options.getString('feedback'))
         const submitChannel = (await client.channels.fetch(guild.submitChannel)) as TextChannel
-        let submissionMsg
+        let submissionMsg: Message
 
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)

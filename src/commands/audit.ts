@@ -65,7 +65,7 @@ export default new Command({
             const pageLength = 10
             let page = 1
             let reviewers
-            let guildName
+            let guildName: string
 
             if (global) {
                 guildName = 'all build teams'
@@ -313,7 +313,7 @@ export default new Command({
             const user = i.options.getUser('user')
             const userId = i.options.getUser('user').id
             let userData: ReviewerInterface
-            let guildName
+            let guildName: string
 
             if (global) {
                 guild = client.guildsData.get('global')

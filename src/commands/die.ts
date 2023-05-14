@@ -1,7 +1,7 @@
 import Command from '../struct/Command.js'
 import User from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
-import Discord, { TextChannel } from 'discord.js'
+import Discord, { Message, TextChannel } from 'discord.js'
 
 export default new Command({
     name: 'die',
@@ -29,7 +29,7 @@ export default new Command({
             guildData.submitChannel
         )) as TextChannel
         const submissionId = await options.getString('submissionid')
-        let submissionMsg
+        let submissionMsg: Message
 
         try {
             // check if the submission msg is valid and already graded
