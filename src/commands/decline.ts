@@ -1,7 +1,7 @@
 // const Rejection = require('../base/Rejection')
 import Rejection from '../struct/Rejection.js'
 import Command from '../struct/Command.js'
-import Discord, { TextChannel } from 'discord.js'
+import Discord, { Message, TextChannel } from 'discord.js'
 import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 
@@ -30,7 +30,7 @@ export default new Command({
         const feedback = validateFeedback(options.getString('feedback'))
         const submitChannel = (await client.channels.fetch(guild.submitChannel)) as TextChannel
 
-        let submissionMsg
+        let submissionMsg: Message
 
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
@@ -41,7 +41,7 @@ export default new Command({
         }
 
         // Check if it already got graded
-        const isAccepted = await checkIfAccepted(submissionMsg)
+        const isAccepted = await checkIfAccepted(submissionMsg.id)
         if (isAccepted) {
             return i.reply(
                 'that one already got accepted <:bonk:720758421514878998>! Use `/purge` instead'
@@ -49,7 +49,7 @@ export default new Command({
         }
 
         // Check if it already got declined / purged
-        const isRejected = await checkIfRejected(submissionMsg)
+        const isRejected = await checkIfRejected(submissionMsg.id)
         if (isRejected) {
             return i.reply('that one has already been rejected <:bonk:720758421514878998>!')
         }

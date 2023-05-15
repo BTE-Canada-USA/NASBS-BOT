@@ -1,5 +1,5 @@
 import Rejection from '../struct/Rejection.js'
-import Submission from '../struct/Submission.js'
+import Submission, { SubmissionInterface } from '../struct/Submission.js'
 
 /**
  * Check whether a submission has been accepted
@@ -22,7 +22,7 @@ async function checkIfAccepted(submissionId: string) {
  * @returns true if the submission is in the rejections db
  */
 async function checkIfRejected(submissionId: string) {
-    const submission = await Rejection.findOne({
+    const submission: SubmissionInterface = await Rejection.findOne({
         _id: submissionId
     }).lean()
 

@@ -1,8 +1,9 @@
-import Discord from 'discord.js'
+import Discord, { CommandInteraction, GuildMember } from 'discord.js'
+import { GuildInterface } from '../struct/Guild.js'
 import Submission from '../struct/Submission.js'
 
 // function for sending dm and upgrading role, same for all rankups
-async function doRankup(member, emoji, name, msg, roleId, i) {
+async function doRankup(member: GuildMember, emoji: string, name: string, msg: string, roleId: string, i: CommandInteraction) {
     // send rankup DM
     const embed = new Discord.MessageEmbed()
         .setTitle(
@@ -22,7 +23,7 @@ async function doRankup(member, emoji, name, msg, roleId, i) {
 }
 
 // check if builder qualifies for rankup
-async function checkForRankup(member, points, guild, i) {
+async function checkForRankup(member: GuildMember, points: number, guild: GuildInterface, i: CommandInteraction) {
     // if cant get the member, they must not be in server so cant rankup
     if (!member) {
         return i.followUp('member is no longer in this server')

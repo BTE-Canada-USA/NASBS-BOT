@@ -3,7 +3,7 @@ import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import User from '../struct/Builder.js'
 import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
 import { checkForRankup } from '../review/rankup.js'
-import Discord, { Message, MessageReaction, TextChannel } from 'discord.js'
+import Discord, { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
@@ -85,7 +85,7 @@ export default new Command({
         const builderId = submissionMsg.author.id
         const bonus = options.getInteger('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
-        let pointsTotal
+        let pointsTotal: number
         let submissionData: SubmissionInterface = {
             _id: submissionId,
             guildId: i.guild.id,
@@ -100,13 +100,13 @@ export default new Command({
         }
 
         // review function used by all subcommands
-        async function review(reply, data, countType, countValue) {
+        async function review(reply: string, data: SubmissionInterface, countType: string, countValue: number) {
             // get member using fetch, not from msg.member because thats bad
-            let member
+            let member: GuildMember
             try {
                 member = await i.guild.members.fetch(builderId)
             } catch (e) {
-                member == null
+                member = null
             }
 
             if (
@@ -166,7 +166,7 @@ export default new Command({
                         { id: builderId, guildId: i.guild.id },
                         {
                             $inc: {
-                                pointsTotal: parseFloat(pointsTotal),
+                                pointsTotal: pointsTotal,
                                 [countType]: countValue
                             }
                         },
@@ -232,7 +232,7 @@ export default new Command({
             const size = options.getInteger('size')
             const quality = options.getNumber('quality')
             const complexity = options.getNumber('complexity')
-            let sizeName
+            let sizeName: string
             pointsTotal = (size * quality * complexity * bonus) / collaborators
             submissionData = {
                 ...submissionData,
@@ -271,7 +271,7 @@ export default new Command({
             const quality = options.getNumber('avgquality')
             const complexity = options.getNumber('avgcomplexity')
             pointsTotal =
-                (smallAmt * 2 + mediumAmt * 5 + largeAmt * 10) * quality * complexity * bonus
+                (smallAmt * 2 + mediumAmt * 5 + largeAmt * 10) * quality * complexity * bonus / collaborators
 
             submissionData = {
                 ...submissionData,
