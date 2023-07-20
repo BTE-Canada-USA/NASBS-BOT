@@ -1,56 +1,59 @@
 import Discord from 'discord.js'
 
 export default async function execute(client, msg) {
-    if (msg.author.bot) return
-    if (client.test || (!client.test && msg.guild.id == '935926834019844097')) return
+    // ignore bot msgs
+    if (msg.author.bot) {
+        return
+    }
+
+    // production bot ignores test server, and test bot ignores other servers
+    // theres probbaly beter way to write this statement but i dont like thinking
+    if (
+        (!client.test && msg.guild?.id == '935926834019844097') ||
+        (client.test && msg.guild?.id != '935926834019844097')
+    ) {
+        return
+    }
 
     const guild = client.guildsData.get(msg.guild.id)
     if (!guild) return
 
-    // check for correct formatting for all messages in build-submit channel
-    if (msg.channel.id == guild.submitChannel) {
-        // check for images
-        if (msg.attachments.size === 0) {
-            return reject(client, msg, guild, 'NO IMAGE FOUND')
+    // if msg is not in build-submit channel, ignore
+    if (msg.channel.id != guild.submitChannel) {
+        return
+    }
+
+    // otherwise, check each build-submit msg
+    // check for images
+    if (msg.attachments.size === 0) {
+        return reject(client, msg, guild, 'NO IMAGE FOUND')
+    }
+
+    // split submission msg by each new line
+    const lines = msg.content.split('\n')
+
+    const coordsRegex =
+        /^(\s*[(]?[-+]?([1-8]+\d\.(\d+)?|90(\.0+))\xb0?,?\s+[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]+\d))\.(\d+))\xb0?\s*)|(\s*(\d{1,3})\s*(?:°|d|º| |g|o)\s*([0-6]?\d)\s*(?:'|m| |´|’|′))/
+
+    let coords = false
+    let count = false
+
+    // check content of each line of msg to see if one of them contains valid coordinates
+    // msg could contain multiple lines due to notes, etc, so thats why check each line
+    lines.forEach((line) => {
+        line = line.replace(/#/g, '')
+        if (coordsRegex.test(line) === true) {
+            coords = true
         }
+    })
 
-        // ensure there are at least 2 lines (# and coords)
-        const lines = msg.content.split('\n')
-        if (lines.length < 2) {
-            return reject(client, msg, guild, '')
-        }
-
-        const coordsRegex =
-            /^(\s*[(]?[-+]?([1-8]+\d\.(\d+)?|90(\.0+))\xb0?,?\s+[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]+\d))\.(\d+))\xb0?\s*)|(\s*(\d{1,3})\s*(?:°|d|º| |g|o)\s*([0-6]?\d)\s*(?:'|m| |´|’|′))/
-
-        let coords = false
-        let count = false
-
-        // check content of each line for either count (including range x-z) or coords
-        lines.forEach((line) => {
-            line = line.replace(/#/g, '')
-            if (coordsRegex.test(line) === true) {
-                coords = true
-            } else if (!isNaN(line) && Number.isInteger(Number(line))) {
-                count = true
-            } else if (
-                line.includes('-') &&
-                line.split('-').length === 2 &&
-                !isNaN(line.replace('-', ''))
-            ) {
-                count = true
-            }
-        })
-
-        // reject submission if it doesn't include coords or a count
-        if (!coords) {
-            reject(client, msg, guild, 'INVALID OR UNRECOGNIZED COORDINATES')
-        } else if (!count) {
-            reject(client, msg, guild, 'BUILD COUNT NOT PRESENT')
-        }
+    // reject submission if it doesn't include coords
+    if (!coords) {
+        reject(client, msg, guild, 'INVALID OR UNRECOGNIZED COORDINATES')
     }
 }
 
+// helper func that sends the rejection msg and deletes the submission
 async function reject(client, msg, guild, reason) {
     const embed = new Discord.MessageEmbed()
         .setTitle(`INCORRECT SUBMISSION FORMAT: ${reason}`)
