@@ -100,7 +100,12 @@ export default new Command({
         }
 
         // review function used by all subcommands
-        async function review(reply: string, data: SubmissionInterface, countType: string, countValue: number) {
+        async function review(
+            reply: string,
+            data: SubmissionInterface,
+            countType: string,
+            countValue: number
+        ) {
             // get member using fetch, not from msg.member because thats bad
             let member: GuildMember
             try {
@@ -126,6 +131,7 @@ export default new Command({
                 }).lean()
 
                 if (edit && originalSubmission) {
+                    // for edits
                     // get change from original submission, update user's total points and the countType field
                     const pointsIncrement = pointsTotal - originalSubmission.pointsTotal
                     const countTypeIncrement = (() => {
@@ -161,6 +167,7 @@ export default new Command({
                         `EDITED \`${builder.username}#${builder.discriminator}\` ${reply}`
                     )
                 } else {
+                    // for initial reviews
                     // increment user's total points and building count/sqm/roadKMs
                     await User.updateOne(
                         { id: builderId, guildId: i.guild.id },
@@ -173,32 +180,6 @@ export default new Command({
                         { upsert: true }
                     ).lean()
 
-                    // send dm if user has it enabled
-                    const dmsEnabled = await areDmsEnabled(builderId)
-
-                    if (dmsEnabled && member) {
-                        const dm = await member.createDM()
-                        await dm
-                            .send({
-                                embeds: [
-                                    new Discord.MessageEmbed()
-                                        .setTitle(
-                                            `${guildData.emoji} Build reviewed! ${guildData.emoji}`
-                                        )
-                                        .setDescription(`You ${reply}`)
-                                        .setFooter({
-                                            text: `Use the cmd '/preferences' to toggle build review DMs.`
-                                        })
-                                ]
-                            })
-                            .catch((err) => {
-                                console.log(err)
-                                i.followUp(
-                                    `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
-                                )
-                            })
-                    }
-
                     // Remove all bot reactions, then add a '✅' reaction
                     await submissionMsg.reactions.cache.forEach((reaction: MessageReaction) =>
                         reaction.remove()
@@ -207,6 +188,33 @@ export default new Command({
                     await i.followUp(
                         `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\n\`${builder.username}#${builder.discriminator}\` has ${reply}`
                     )
+                }
+
+                // after updating db, send dm (does this for edits and initial reviews)
+                // send dm if user has it enabled
+                const dmsEnabled = await areDmsEnabled(builderId)
+
+                if (dmsEnabled && member) {
+                    const dm = await member.createDM()
+                    await dm
+                        .send({
+                            embeds: [
+                                new Discord.MessageEmbed()
+                                    .setTitle(
+                                        `${guildData.emoji} Build reviewed! ${guildData.emoji}`
+                                    )
+                                    .setDescription(`You ${reply}`)
+                                    .setFooter({
+                                        text: `Use the cmd '/preferences' to toggle build review DMs.`
+                                    })
+                            ]
+                        })
+                        .catch((err) => {
+                            console.log(err)
+                            i.followUp(
+                                `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
+                            )
+                        })
                 }
             } catch (err) {
                 console.log(err)
@@ -271,7 +279,11 @@ export default new Command({
             const quality = options.getNumber('avgquality')
             const complexity = options.getNumber('avgcomplexity')
             pointsTotal =
-                (smallAmt * 2 + mediumAmt * 5 + largeAmt * 10) * quality * complexity * bonus / collaborators
+                ((smallAmt * 2 + mediumAmt * 5 + largeAmt * 10) *
+                    quality *
+                    complexity *
+                    bonus) /
+                collaborators
 
             submissionData = {
                 ...submissionData,
