@@ -2,7 +2,7 @@ import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import Builder from '../struct/Builder.js'
 import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
-import { checkForRankup } from '../review/rankupUtils.js'
+import { checkForRankup } from '../review/checkForRankup.js'
 import Discord, { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
@@ -220,18 +220,6 @@ export default new Command({
                 console.log(err)
                 i.followUp('ERROR HAPPENED! ' + err)
             }
-
-            try {
-                // get new point total for the user in order to check for rankup
-                const current = await Builder.findOne({
-                    id: builderId,
-                    guildId: i.guild.id
-                }).lean()
-
-                await checkForRankup(member, current.pointsTotal, guildData, i)
-            } catch (err) {
-                i.followUp(`RANKUP ERROR HAPPENED! ${err}`)
-            }
         }
 
         // subcommands
@@ -266,6 +254,7 @@ export default new Command({
                     break
             }
 
+            await checkForRankup(member, guildData, i)
             return review(
                 `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nBuilding type: ${sizeName}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``,
                 submissionData,
@@ -296,6 +285,7 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
+            await checkForRankup(member, guildData, i)
             return review(
                 `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nNumber of buildings (S/M/L): ${smallAmt}/${mediumAmt}/${largeAmt}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``,
                 submissionData,
@@ -318,6 +308,7 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
+            await checkForRankup(member, guildData, i)
             return review(
                 `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nLand area: ${sqm} sqm\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``,
                 submissionData,
@@ -340,6 +331,7 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
+            await checkForRankup(member, guildData, i)
             return review(
                 `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nRoad type: ${roadType}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nDistance: ${roadKMs} km\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\nFeedback: \`${feedback}\``,
                 submissionData,
