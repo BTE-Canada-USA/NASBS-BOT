@@ -99,6 +99,14 @@ export default new Command({
             feedback: feedback
         }
 
+        // get builder as member using fetch, not from msg.member because thats bad
+        let member: GuildMember
+        try {
+            member = await i.guild.members.fetch(builderId)
+        } catch (e) {
+            member = null
+        }
+
         // review function used by all subcommands
         async function review(
             reply: string,
@@ -106,14 +114,6 @@ export default new Command({
             countType: string,
             countValue: number
         ) {
-            // get member using fetch, not from msg.member because thats bad
-            let member: GuildMember
-            try {
-                member = await i.guild.members.fetch(builderId)
-            } catch (e) {
-                member = null
-            }
-
             if (
                 edit &&
                 originalSubmission &&
