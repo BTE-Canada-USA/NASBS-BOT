@@ -1,6 +1,6 @@
 import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
 import { checkForRankup } from '../review/rankupUtils.js'
 import Discord, { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
@@ -152,7 +152,7 @@ export default new Command({
                         }
                     })()
 
-                    await User.updateOne(
+                    await Builder.updateOne(
                         { id: builderId, guildId: i.guild.id },
                         {
                             $inc: {
@@ -169,7 +169,7 @@ export default new Command({
                 } else {
                     // for initial reviews
                     // increment user's total points and building count/sqm/roadKMs
-                    await User.updateOne(
+                    await Builder.updateOne(
                         { id: builderId, guildId: i.guild.id },
                         {
                             $inc: {
@@ -223,7 +223,7 @@ export default new Command({
 
             try {
                 // get new point total for the user in order to check for rankup
-                const current = await User.findOne({
+                const current = await Builder.findOne({
                     id: builderId,
                     guildId: i.guild.id
                 }).lean()

@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User, { BuilderInterface } from '../struct/Builder.js'
+import Builder, { BuilderInterface } from '../struct/Builder.js'
 import Discord from 'discord.js'
 
 export default new Command({
@@ -33,7 +33,7 @@ export default new Command({
         if (global) {
             // sum user's stats from all guilds
             guildName = 'all build teams'
-            userData = await User.aggregate([
+            userData = await Builder.aggregate([
                 { $match: { id: userId } },
                 {
                     $group: {
@@ -58,7 +58,7 @@ export default new Command({
             }
 
             // get global leaderboard position by getting global points of all users, then counting how many users have more global points
-            usersAboveQuery = await User.aggregate([
+            usersAboveQuery = await Builder.aggregate([
                 {
                     $group: {
                         _id: '$id',
@@ -72,7 +72,7 @@ export default new Command({
             ])
         } else {
             guildName = guild.name
-            userData = await User.findOne({
+            userData = await Builder.findOne({
                 id: userId,
                 guildId: guild.id
             }).lean()
@@ -89,7 +89,7 @@ export default new Command({
             }
 
             // get guild leaderboard position by getting points of all users in guild, then counting how many users have more points
-            usersAboveQuery = await User.aggregate([
+            usersAboveQuery = await Builder.aggregate([
                 {
                     $match: { guildId: guild.id }
                 },
