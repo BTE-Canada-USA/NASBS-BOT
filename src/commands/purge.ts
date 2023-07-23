@@ -1,7 +1,7 @@
 import Command from '../struct/Command.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 import Submission from '../struct/Submission.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
@@ -88,7 +88,7 @@ export default new Command({
         const roadKMsIncrement = -originalSubmission.roadKMs || 0
         const sqmIncrement = -originalSubmission.sqm || 0
         const userId = submissionMsg.author.id
-        await User.updateOne(
+        await Builder.updateOne(
             { id: userId, guildId: i.guild.id },
             {
                 $inc: {

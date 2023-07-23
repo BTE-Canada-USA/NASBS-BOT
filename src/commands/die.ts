@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 
@@ -44,7 +44,7 @@ export default new Command({
         const builder = submissionMsg.author
 
         // check if user is in db
-        const userData = await User.findOne({
+        const userData = await Builder.findOne({
             id: builderId,
             guildId: guildData.id
         }).lean()
@@ -75,7 +75,7 @@ export default new Command({
         ).lean()
 
         // update user doc pointstotal
-        await User.updateOne(
+        await Builder.updateOne(
             { id: builderId, guildId: i.guild.id },
             { $inc: { pointsTotal: increment } },
             { upsert: true }

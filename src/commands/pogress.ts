@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord from 'discord.js'
 
@@ -22,7 +22,7 @@ export default new Command({
         const user = options.getUser('user') || i.user
         const userId = user.id
         const member = await i.guild.members.fetch(userId)
-        const userData = await User.findOne({
+        const userData = await Builder.findOne({
             id: userId,
             guildId: guildData.id
         }).lean()

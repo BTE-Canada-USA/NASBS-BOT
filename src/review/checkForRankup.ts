@@ -1,9 +1,17 @@
 import Discord, { CommandInteraction, GuildMember } from 'discord.js'
 import { GuildInterface } from '../struct/Guild.js'
 import Submission from '../struct/Submission.js'
+import Builder from '../struct/Builder.js'
 
 // function for sending dm and upgrading role, same for all rankups
-async function doRankup(member: GuildMember, emoji: string, name: string, msg: string, roleId: string, i: CommandInteraction) {
+async function doRankup(
+    member: GuildMember,
+    emoji: string,
+    name: string,
+    msg: string,
+    roleId: string,
+    i: CommandInteraction
+) {
     // send rankup DM
     const embed = new Discord.MessageEmbed()
         .setTitle(
@@ -22,8 +30,20 @@ async function doRankup(member: GuildMember, emoji: string, name: string, msg: s
     return i.followUp(`user ranked up to **${name}!**`)
 }
 
-// check if builder qualifies for rankup
-async function checkForRankup(member: GuildMember, points: number, guild: GuildInterface, i: CommandInteraction) {
+// function for checking if builder qualifies for rankup
+async function checkForRankup(
+    member: GuildMember,
+    guild: GuildInterface,
+    i: CommandInteraction
+) {
+    // get latest points total for the builder in order to check for rankup
+    const current = await Builder.findOne({
+        id: member.id,
+        guildId: guild.id
+    }).lean()
+
+    const pointsTotal: number = current.pointsTotal
+
     // if cant get the member, they must not be in server so cant rankup
     if (!member) {
         return i.followUp('member is no longer in this server')
@@ -31,8 +51,8 @@ async function checkForRankup(member: GuildMember, points: number, guild: GuildI
 
     // otherwise, proceed with checking for rankup
     if (
-        points >= guild.rank2.points &&
-        points < guild.rank3.points &&
+        pointsTotal >= guild.rank2.points &&
+        pointsTotal < guild.rank3.points &&
         !member.roles.cache.get(guild.rank2.id)
     ) {
         return doRankup(
@@ -44,8 +64,8 @@ async function checkForRankup(member: GuildMember, points: number, guild: GuildI
             i
         )
     } else if (
-        points >= guild.rank3.points &&
-        points < guild.rank4.points &&
+        pointsTotal >= guild.rank3.points &&
+        pointsTotal < guild.rank4.points &&
         !member.roles.cache.get(guild.rank3.id)
     ) {
         // check if builder has 50 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
@@ -101,11 +121,10 @@ async function checkForRankup(member: GuildMember, points: number, guild: GuildI
             )
         }
     } else if (
-        points >= guild.rank4.points &&
-        points < guild.rank5.points &&
+        pointsTotal >= guild.rank4.points &&
+        pointsTotal < guild.rank5.points &&
         !member.roles.cache.get(guild.rank4.id)
     ) {
-        console.log(member)
         // check if builder has 150 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
         const userPoints = await Submission.aggregate([
             {
@@ -156,8 +175,7 @@ async function checkForRankup(member: GuildMember, points: number, guild: GuildI
                 i
             )
         }
-    } else if (points >= guild.rank5.points && !member.roles.cache.get(guild.rank5.id)) {
-        console.log(member)
+    } else if (pointsTotal >= guild.rank5.points && !member.roles.cache.get(guild.rank5.id)) {
         const userPoints = await Submission.aggregate([
             {
                 $match: {

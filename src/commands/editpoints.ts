@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 import { checkIfAccepted } from '../utils/checkForSubmission.js'
@@ -64,7 +64,7 @@ export default new Command({
         ).lean()
 
         // check if user is in db
-        const userData = await User.findOne({
+        const userData = await Builder.findOne({
             id: builderId,
             guildId: guildData.id
         }).lean()
@@ -80,7 +80,7 @@ export default new Command({
         }
 
         // increments user's points by the amount inputted
-        await User.updateOne(
+        await Builder.updateOne(
             { id: builderId, guildId: i.guild.id },
             {
                 $inc: {

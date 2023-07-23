@@ -1,5 +1,5 @@
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
 
 export default new Command({
@@ -33,7 +33,7 @@ export default new Command({
                 }
             }
 
-            await User.updateMany({ id: userId }, { dm: toggle }).lean()
+            await Builder.updateMany({ id: userId }, { dm: toggle }).lean()
 
             if (toggle == true) {
                 return i.reply('Build review DMs enabled YAY!!!! :thumbsup:')

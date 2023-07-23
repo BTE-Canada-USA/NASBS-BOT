@@ -1,13 +1,13 @@
 import Discord, { MessageActionRow, MessageButton } from 'discord.js'
 import Command from '../struct/Command.js'
-import User from '../struct/Builder.js'
+import Builder from '../struct/Builder.js'
 
 /**
  * An individual user returned from the aggregation query
  */
 interface LeaderboardUser {
-    _id: string,
-    count: string,
+    _id: string
+    count: string
 }
 
 export default new Command({
@@ -68,16 +68,16 @@ export default new Command({
         })()
 
         const pageLength = 10
-        const pagesToPrefetch = 1  // Number of pages to prefetch after the current page
+        const pagesToPrefetch = 1 // Number of pages to prefetch after the current page
         let page = 1
-        let users: LeaderboardUser[]  // Users to be put on the leaderboard, sorted in descending order
+        let users: LeaderboardUser[] // Users to be put on the leaderboard, sorted in descending order
         let guildName: string
-        let userInfos: Promise<Discord.User>[] = []  // User attributes fetched from Discord. Indices correspond with 'users' array
+        let userInfos: Promise<Discord.User>[] = [] // User attributes fetched from Discord. Indices correspond with 'users' array
 
         if (options.getBoolean('global')) {
             guildName = 'all build teams'
             // get array of all users and their global points, sort descending
-            users = await User.aggregate([
+            users = await Builder.aggregate([
                 {
                     $match: {
                         [dbAttrName]: { $exists: true, $nin: [null, 0] }
@@ -94,7 +94,7 @@ export default new Command({
         } else {
             guildName = guild.name
             // or get array of all users in this guild and their points, sort descending
-            users = await User.aggregate([
+            users = await Builder.aggregate([
                 {
                     $match: {
                         guildId: guild.id,
@@ -126,7 +126,7 @@ export default new Command({
 
         // create the embed for a page of leaderboard (the first page is page=1)
         async function makeEmbed(page: number) {
-            const pageStart = page * pageLength - pageLength  // the first index on this page
+            const pageStart = page * pageLength - pageLength // the first index on this page
             // fetch all user information for this page and prefetch for the next 'pagesToPrefetch' pages
             for (let i = pageStart; i < pageStart + (1 + pagesToPrefetch) * pageLength; i++) {
                 // only fetch if that user exists and that user's info has not already been fetched
@@ -136,12 +136,14 @@ export default new Command({
             }
             // wait for this page's users so we can display their username/#
             // the length of pageUserInfos may be less than 'pageLength' iff this is the last page
-            const pageUserInfos = await Promise.all(userInfos.slice(pageStart, pageStart + pageLength))
+            const pageUserInfos = await Promise.all(
+                userInfos.slice(pageStart, pageStart + pageLength)
+            )
 
             let content = ''
             // display each user and their count
             for (let i = pageStart; i < pageStart + pageUserInfos.length; i++) {
-                const indxInPage = i - pageStart  // This user's index in the page
+                const indxInPage = i - pageStart // This user's index in the page
                 const value = (() => {
                     if (/[\.]/.test(users[i].count)) {
                         // if the value is a float
