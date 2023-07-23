@@ -147,7 +147,6 @@ export default new Command({
                 submissionData,
                 'buildingCount',
                 1,
-                isEdit,
                 originalSubmission,
                 i
             )
@@ -185,7 +184,6 @@ export default new Command({
                 submissionData,
                 'buildingCount',
                 smallAmt + mediumAmt + largeAmt,
-                isEdit,
                 originalSubmission,
                 i
             )
@@ -211,15 +209,7 @@ export default new Command({
 
             // do review things
             await checkForRankup(builder, guildData, i)
-            await addReviewToDb(
-                reply,
-                submissionData,
-                'sqm',
-                sqm,
-                isEdit,
-                originalSubmission,
-                i
-            )
+            await addReviewToDb(reply, submissionData, 'sqm', sqm, originalSubmission, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'road') {
@@ -247,7 +237,6 @@ export default new Command({
                 submissionData,
                 'roadKMs',
                 roadKMs,
-                isEdit,
                 originalSubmission,
                 i
             )
