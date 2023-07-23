@@ -1,12 +1,10 @@
 import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
-import Builder from '../struct/Builder.js'
 import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
 import { checkForRankup } from '../review/checkForRankup.js'
-import Discord, { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
+import { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
-import areDmsEnabled from '../utils/areDmsEnabled.js'
 import { addReviewToDb } from '../review/addReviewToDb.js'
 import { sendDm } from '../review/sendDm.js'
 import { addCheckmarkReaction } from '../review/addCheckmarkReaction.js'
@@ -45,7 +43,7 @@ export default new Command({
         )) as TextChannel //await client.channels.fetch(guildData.submitChannel)
         const submissionId = await options.getString('submissionid')
         const feedback = validateFeedback(options.getString('feedback'))
-        const edit = options.getBoolean('edit') || false
+        const isEdit = options.getBoolean('edit') || false
         let submissionMsg: Message
 
         try {
@@ -68,15 +66,15 @@ export default new Command({
             _id: submissionId
         }).lean()
 
-        if (edit && originalSubmission == null && !isRejected) {
+        if (isEdit && originalSubmission == null && !isRejected) {
             return i.reply(
                 'that one hasnt been graded yet <:bonk:720758421514878998>! Use `edit=False`'
             )
-        } else if (!edit && originalSubmission) {
+        } else if (!isEdit && originalSubmission) {
             return i.reply(
                 'that one already got graded <:bonk:720758421514878998>! Use `edit=True`'
             )
-        } else if (!edit && isRejected) {
+        } else if (!isEdit && isRejected) {
             return i.reply(
                 'that one has already been rejected <:bonk:720758421514878998>! Use `edit=True`'
             )
@@ -84,7 +82,6 @@ export default new Command({
 
         // set variables shared by all subcommands
         await i.reply('doing stuff...')
-        const builder = submissionMsg.author
         const builderId = submissionMsg.author.id
         const bonus = options.getInteger('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
@@ -95,7 +92,7 @@ export default new Command({
             userId: builderId,
             collaborators: collaborators,
             bonus: bonus,
-            edit: edit,
+            edit: isEdit,
             submissionTime: submissionMsg.createdTimestamp,
             reviewTime: i.createdTimestamp,
             reviewer: i.user.id,
@@ -103,11 +100,11 @@ export default new Command({
         }
 
         // get builder as member using fetch, not from msg.member because thats bad
-        let member: GuildMember
+        let builder: GuildMember
         try {
-            member = await i.guild.members.fetch(builderId)
+            builder = await i.guild.members.fetch(builderId)
         } catch (e) {
-            member = null
+            builder = null
         }
 
         // subcommands
@@ -144,17 +141,17 @@ export default new Command({
             const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nBuilding type: ${sizeName}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
 
             // do review things
-            await checkForRankup(member, guildData, i)
+            await checkForRankup(builder, guildData, i)
             await addReviewToDb(
                 reply,
                 submissionData,
                 'buildingCount',
                 1,
-                edit,
+                isEdit,
                 originalSubmission,
                 i
             )
-            await sendDm(member, guildData, reply, i)
+            await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'many') {
             const smallAmt = options.getInteger('smallamt')
@@ -182,17 +179,17 @@ export default new Command({
             const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nNumber of buildings (S/M/L): ${smallAmt}/${mediumAmt}/${largeAmt}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
 
             // do review things
-            await checkForRankup(member, guildData, i)
+            await checkForRankup(builder, guildData, i)
             await addReviewToDb(
                 reply,
                 submissionData,
                 'buildingCount',
                 smallAmt + mediumAmt + largeAmt,
-                edit,
+                isEdit,
                 originalSubmission,
                 i
             )
-            await sendDm(member, guildData, reply, i)
+            await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'land') {
             const sqm = options.getNumber('sqm')
@@ -213,9 +210,17 @@ export default new Command({
             const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nLand area: ${sqm} sqm\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
 
             // do review things
-            await checkForRankup(member, guildData, i)
-            await addReviewToDb(reply, submissionData, 'sqm', sqm, edit, originalSubmission, i)
-            await sendDm(member, guildData, reply, i)
+            await checkForRankup(builder, guildData, i)
+            await addReviewToDb(
+                reply,
+                submissionData,
+                'sqm',
+                sqm,
+                isEdit,
+                originalSubmission,
+                i
+            )
+            await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'road') {
             const roadType = options.getNumber('roadtype')
@@ -236,17 +241,17 @@ export default new Command({
             const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nRoad type: ${roadType}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nDistance: ${roadKMs} km\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\nFeedback: \`${feedback}\``
 
             // do review things
-            await checkForRankup(member, guildData, i)
+            await checkForRankup(builder, guildData, i)
             await addReviewToDb(
                 reply,
                 submissionData,
                 'roadKMs',
                 roadKMs,
-                edit,
+                isEdit,
                 originalSubmission,
                 i
             )
-            await sendDm(member, guildData, reply, i)
+            await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         }
     }
