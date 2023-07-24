@@ -8,6 +8,7 @@ import validateFeedback from '../utils/validateFeedback.js'
 import { addReviewToDb } from '../review/addReviewToDb.js'
 import { sendDm } from '../review/sendDm.js'
 import { addCheckmarkReaction } from '../review/addCheckmarkReaction.js'
+import { updateReviewerForAcceptance } from '../review/updateReviewer.js'
 
 export default new Command({
     name: 'review',
@@ -150,6 +151,7 @@ export default new Command({
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'many') {
@@ -187,6 +189,7 @@ export default new Command({
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'land') {
@@ -210,6 +213,7 @@ export default new Command({
             // do review things
             await checkForRankup(builder, guildData, i)
             await addReviewToDb(reply, submissionData, 'sqm', sqm, originalSubmission, i)
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'road') {
@@ -240,6 +244,7 @@ export default new Command({
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         }
