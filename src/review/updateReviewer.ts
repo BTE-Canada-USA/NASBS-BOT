@@ -202,4 +202,62 @@ async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback:
     ).lean()
 }
 
-export { updateReviewerForAcceptance, updateReviewerForRejection }
+/**
+ * remove a review from a reviewer's stats
+ * @param purgedSubmission the submission that will be removed
+ */
+async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
+    // get the reviewer to purge
+    const reviewer: ReviewerInterface = await Reviewer.findOne({
+        id: purgedSubmission.reviewer,
+        guildId: purgedSubmission.guildId
+    }).lean()
+
+    // use formula for removing a value from avg
+    // newAvg = (oldAvg * nValues - value) / (nValues - 1)
+    // dont need to do -1 for nValues since this value hasn't been updated yet in db,
+    // so reviewsWFeedback and acceptances is already the nValues - 1 we want
+    const feedbackCharsAvg =
+        (reviewer.feedbackCharsAvg * reviewer.reviewsWithFeedback -
+            purgedSubmission.feedback.length) /
+        reviewer.reviewsWithFeedback
+
+    const feedbackWordsAvg =
+        (reviewer.feedbackWordsAvg * reviewer.reviewsWithFeedback -
+            countWords(purgedSubmission.feedback)) /
+        reviewer.reviewsWithFeedback
+
+    const qualityAvg =
+        (reviewer.qualityAvg * reviewer.acceptances - purgedSubmission.quality) /
+        reviewer.acceptances
+
+    const complexityAvg =
+        (reviewer.complexityAvg * reviewer.acceptances - purgedSubmission.complexity) /
+        reviewer.acceptances
+
+    // update old reviewer doc
+    await Reviewer.updateOne(
+        { id: reviewer.id, guildId: purgedSubmission.guildId },
+        {
+            $inc: {
+                acceptances: -1,
+                reviews: -1,
+                reviewsWithFeedback: -1
+            }
+        }
+    ).lean()
+
+    // update old reviewer doc pt 2 because mongoose cant $set and $inc in 1 query
+    await Reviewer.updateOne(
+        { id: reviewer.id, guildId: purgedSubmission.guildId },
+        {
+            $set: {
+                complexityAvg: complexityAvg,
+                qualityAvg: qualityAvg,
+                feedbackCharsAvg: feedbackCharsAvg,
+                feedbackWordsAvg: feedbackWordsAvg
+            }
+        }
+    ).lean()
+}
+export { updateReviewerForAcceptance, updateReviewerForRejection, updateReviewerForPurge }
