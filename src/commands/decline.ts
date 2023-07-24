@@ -4,6 +4,8 @@ import Command from '../struct/Command.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
+import { updateReviewerForRejection } from '../review/updateReviewer.js'
+import Reviewer from '../struct/Reviewer.js'
 
 export default new Command({
     name: 'decline',
@@ -52,6 +54,16 @@ export default new Command({
         const isRejected = await checkIfRejected(submissionMsg.id)
         if (isRejected) {
             return i.reply('that one has already been rejected <:bonk:720758421514878998>!')
+        }
+
+        // check if reviewer has reviewed yet or not. new reviewers cannot decline as a first review
+        // because that breaks all the stats
+        const reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
+
+        if (!reviewer) {
+            return i.reply(
+                'you have not reviewed any builds. due to technical limitations you must review at least 1 build before you may use the decline command.'
+            )
         }
 
         // dm builder
