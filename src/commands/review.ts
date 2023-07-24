@@ -75,9 +75,9 @@ export default new Command({
             return i.reply(
                 'that one already got graded <:bonk:720758421514878998>! Use `edit=True`'
             )
-        } else if (!isEdit && isRejected) {
+        } else if (isRejected) {
             return i.reply(
-                'that one has already been rejected <:bonk:720758421514878998>! Use `edit=True`'
+                'that one was rejected <:bonk:720758421514878998>! You cannot accept a rejected submission. The builder must resubmit.'
             )
         }
 
