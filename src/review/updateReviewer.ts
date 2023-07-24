@@ -17,58 +17,7 @@ async function updateReviewerForAcceptance(
     // if review is edit, get previous reviewer and remove the original review from their stats
     // do this first in case editor is same as reviewer: this order of doing things works properly
     if (submissionData.edit) {
-        // get previous reviewer
-        const oldReviewer: ReviewerInterface = await Reviewer.findOne({
-            id: originalSubmission.reviewer,
-            guildId: submissionData.guildId
-        }).lean()
-
-        // use formula for removing a value from avg
-        // newAvg = (oldAvg * nValues - value) / (nValues - 1)
-        // dont need to do -1 for nValues since this value hasn't been updated yet in db,
-        // so reviewsWFeedback and acceptances is already the nValues - 1 we want
-        const feedbackCharsAvg =
-            (oldReviewer.feedbackCharsAvg * oldReviewer.reviewsWithFeedback -
-                originalSubmission.feedback.length) /
-            oldReviewer.reviewsWithFeedback
-
-        const feedbackWordsAvg =
-            (oldReviewer.feedbackWordsAvg * oldReviewer.reviewsWithFeedback -
-                countWords(originalSubmission.feedback)) /
-            oldReviewer.reviewsWithFeedback
-
-        const qualityAvg =
-            (oldReviewer.qualityAvg * oldReviewer.acceptances - originalSubmission.quality) /
-            oldReviewer.acceptances
-
-        const complexityAvg =
-            (oldReviewer.complexityAvg * oldReviewer.acceptances -
-                originalSubmission.complexity) /
-            oldReviewer.acceptances
-
-        // update old reviewer doc
-        await Reviewer.updateOne(
-            { id: oldReviewer.id, guildId: submissionData.guildId },
-            {
-                $inc: {
-                    acceptances: -1,
-                    reviews: -1,
-                    reviewsWithFeedback: -1
-                }
-            }
-        )
-        // update old reviewer doc pt 2 because mongoose cant $set and $inc in 1 query
-        await Reviewer.updateOne(
-            { id: oldReviewer.id, guildId: submissionData.guildId },
-            {
-                $set: {
-                    complexityAvg: complexityAvg,
-                    qualityAvg: qualityAvg,
-                    feedbackCharsAvg: feedbackCharsAvg,
-                    feedbackWordsAvg: feedbackWordsAvg
-                }
-            }
-        )
+        await updateReviewerForPurge(originalSubmission)
     }
 
     // now that edit thing is done, add new stats to reviewer
