@@ -5,6 +5,7 @@ import Builder from '../struct/Builder.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
+import { updateReviewerForPurge } from '../review/updateReviewer.js'
 
 export default new Command({
     name: 'purge',
@@ -123,6 +124,9 @@ export default new Command({
                     `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                 )
             })
+
+            // update reviewer
+            await updateReviewerForPurge(originalSubmission)
 
             i.followUp(
                 `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback sent :weena!: \`${feedback}\``
