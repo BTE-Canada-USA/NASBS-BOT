@@ -8,6 +8,7 @@ import validateFeedback from '../utils/validateFeedback.js'
 import { addReviewToDb } from '../review/addReviewToDb.js'
 import { sendDm } from '../review/sendDm.js'
 import { addCheckmarkReaction } from '../review/addCheckmarkReaction.js'
+import { updateReviewerForAcceptance } from '../review/updateReviewer.js'
 
 export default new Command({
     name: 'review',
@@ -74,9 +75,9 @@ export default new Command({
             return i.reply(
                 'that one already got graded <:bonk:720758421514878998>! Use `edit=True`'
             )
-        } else if (!isEdit && isRejected) {
+        } else if (isRejected) {
             return i.reply(
-                'that one has already been rejected <:bonk:720758421514878998>! Use `edit=True`'
+                'that one was rejected <:bonk:720758421514878998>! You cannot accept a rejected submission. The builder must resubmit.'
             )
         }
 
@@ -147,10 +148,10 @@ export default new Command({
                 submissionData,
                 'buildingCount',
                 1,
-                isEdit,
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'many') {
@@ -185,10 +186,10 @@ export default new Command({
                 submissionData,
                 'buildingCount',
                 smallAmt + mediumAmt + largeAmt,
-                isEdit,
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'land') {
@@ -211,15 +212,8 @@ export default new Command({
 
             // do review things
             await checkForRankup(builder, guildData, i)
-            await addReviewToDb(
-                reply,
-                submissionData,
-                'sqm',
-                sqm,
-                isEdit,
-                originalSubmission,
-                i
-            )
+            await addReviewToDb(reply, submissionData, 'sqm', sqm, originalSubmission, i)
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         } else if (i.options.getSubcommand() == 'road') {
@@ -247,10 +241,10 @@ export default new Command({
                 submissionData,
                 'roadKMs',
                 roadKMs,
-                isEdit,
                 originalSubmission,
                 i
             )
+            await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
         }

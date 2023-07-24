@@ -9,7 +9,6 @@ import Builder from '../struct/Builder.js'
  * @param submissionData
  * @param countType buildingCount/roadKMs/sqm
  * @param countValue the amount of buildings/roadKMs/sqms
- * @param isEdit is this review a edit
  * @param originalSubmission the og submission doc if edit, or null if initial review
  * @param i the review command interaction
  * @returns
@@ -19,13 +18,12 @@ async function addReviewToDb(
     submissionData: SubmissionInterface,
     countType: string,
     countValue: number,
-    isEdit: boolean,
     originalSubmission: SubmissionInterface | null,
     i: CommandInteraction
 ) {
     // make sure edits dont change the submission type
     if (
-        isEdit &&
+        submissionData.edit &&
         originalSubmission &&
         originalSubmission.submissionType !== submissionData.submissionType
     ) {
@@ -41,7 +39,7 @@ async function addReviewToDb(
         }).lean()
 
         // update builder doc
-        if (isEdit && originalSubmission) {
+        if (submissionData.edit && originalSubmission) {
             // for edits ----------------------------------------------------
             // get change from original submission, update user's total points and the countType field
             const pointsIncrement = submissionData.pointsTotal - originalSubmission.pointsTotal
@@ -75,7 +73,8 @@ async function addReviewToDb(
                 { upsert: true }
             ).lean()
 
-            i.followUp(`EDITED Builder ${reviewMsg}`)
+            // confirmation msg
+            return i.followUp(`EDITED Builder ${reviewMsg}`)
         } else {
             // for initial reviews ------------------------------------------
             // increment user's total points and building count/sqm/roadKMs
@@ -89,11 +88,12 @@ async function addReviewToDb(
                 },
                 { upsert: true }
             ).lean()
-        }
 
-        await i.followUp(
-            `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\nBuilder has ${reviewMsg}`
-        )
+            // confirmation msg
+            await i.followUp(
+                `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\nBuilder has ${reviewMsg}`
+            )
+        }
     } catch (err) {
         console.log(err)
         i.followUp('ERROR HAPPENED! ' + err)
