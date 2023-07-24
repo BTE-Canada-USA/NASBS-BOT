@@ -95,6 +95,10 @@ export default new Command({
         })
         await rejection.save()
         await submissionMsg.react('❌')
+
+        // update reviewer
+        await updateReviewerForRejection(reviewer, feedback)
+
         return i.reply(
             `rejected and feedback sent :weena!: \`${feedback}\`\n__[Submission link](<${submissionMsg.url}>)__`
         )

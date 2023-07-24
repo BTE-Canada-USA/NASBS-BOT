@@ -157,4 +157,49 @@ async function updateReviewerForAcceptance(
     i.followUp('updated reviewer!')
 }
 
-export { updateReviewerForAcceptance }
+/**
+ * update reviewer doc for a declined review, add the feedback to their stats
+ * @param reviwer
+ * @param submissionData
+ */
+async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback: string) {
+    // add feedback to the reviewer's avgs
+    const feedbackCharsAvg =
+        (reviewer.feedbackCharsAvg * reviewer.reviewsWithFeedback - feedback.length) /
+        reviewer.reviewsWithFeedback
+
+    const feedbackWordsAvg =
+        (reviewer.feedbackWordsAvg * reviewer.reviewsWithFeedback - countWords(feedback)) /
+        reviewer.reviewsWithFeedback
+
+    // add a rejection and a review
+    await Reviewer.updateOne(
+        {
+            id: reviewer.id,
+            guildId: reviewer.guildId
+        },
+        {
+            $inc: {
+                rejections: 1,
+                reviews: 1,
+                reviewsWithFeedback: 1
+            }
+        }
+    ).lean()
+
+    // update the feedback stats
+    await Reviewer.updateOne(
+        {
+            id: reviewer.id,
+            guildId: reviewer.guildId
+        },
+        {
+            $set: {
+                feedbackCharsAvg: feedbackCharsAvg,
+                feedbackWordsAvg: feedbackWordsAvg
+            }
+        }
+    ).lean()
+}
+
+export { updateReviewerForAcceptance, updateReviewerForRejection }
