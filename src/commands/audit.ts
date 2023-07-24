@@ -388,13 +388,13 @@ export default new Command({
                             }***  :white_check_mark: !!!\nNumber of rejections: :x: ***${
                                 userData.rejections || 0
                             }***  :x:\nAverage feedback characters: :keyboard: ***${
-                                userData.feedbackCharsAvg.toFixed(3) || 0
+                                userData.feedbackCharsAvg?.toFixed(3) || 0
                             }***  :keyboard:\nAverage feedback words: :pencil: ***${
-                                userData.feedbackWordsAvg.toFixed(3) || 0
+                                userData.feedbackWordsAvg?.toFixed(3) || 0
                             }*** :pencil:\nAverage quality: :gem: ***${
-                                userData.qualityAvg.toFixed(3) || 0
+                                userData.qualityAvg?.toFixed(3) || 0
                             }*** :gem:\nAverage complexity: :smiley_cat: ***${
-                                userData.complexityAvg.toFixed(3) || 0
+                                userData.complexityAvg?.toFixed(3) || 0
                             }*** :smiley_cat:`
                         )
                         .setFooter({
