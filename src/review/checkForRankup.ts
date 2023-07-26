@@ -32,22 +32,23 @@ async function doRankup(
 
 // function for checking if builder qualifies for rankup
 async function checkForRankup(
-    member: GuildMember,
+    member: GuildMember | null,
     guild: GuildInterface,
     i: CommandInteraction
 ) {
+    // if cant get the member, they must not be in server anymore so cant rankup
+    if (!member) {
+        return i.followUp('member is no longer in this server')
+    }
+
     // get latest points total for the builder in order to check for rankup
-    const current = await Builder.findOne({
+    const builder = await Builder.findOne({
         id: member.id,
         guildId: guild.id
     }).lean()
 
-    const pointsTotal: number = current.pointsTotal
-
-    // if cant get the member, they must not be in server so cant rankup
-    if (!member) {
-        return i.followUp('member is no longer in this server')
-    }
+    // if builder doesnt exist in db yet, they have 0 points
+    const pointsTotal: number = builder?.pointsTotal || 0
 
     // otherwise, proceed with checking for rankup
     if (
