@@ -93,7 +93,7 @@ export default new Command({
                         {
                             $set: {
                                 globalAvg: {
-                                    // when dividing by number of servers, make sure its more than 0 for those with no acceptances/withfeedbacks
+                                    // when dividing by number of servers, make sure it's more than 0 for those with no acceptances/withfeedbacks
                                     $divide: [
                                         '$metricTotal',
                                         {
@@ -110,7 +110,7 @@ export default new Command({
                         { $sort: { globalAvg: -1 } }
                     ])
                 } else if (metric == 'qualityAvg' || metric == 'complexityAvg') {
-                    // for quality/complx, average by total acceptances
+                    // for quality/complex, average by total acceptances
                     reviewers = await Reviewer.aggregate([
                         {
                             $group: {
@@ -219,13 +219,11 @@ export default new Command({
                     }\`: ${value}\n\n`
                 }
 
-                const embed = new Discord.MessageEmbed()
+                return new Discord.MessageEmbed()
                     .setTitle(
                         `${metric} leaderboard for  ${guild.emoji} ${guildName} ${guild.emoji}!`
                     )
                     .setDescription(content)
-
-                return embed
             }
 
             // reply with page 1 and next button
@@ -260,7 +258,7 @@ export default new Command({
                     .then(async (i) => {
                         if (i.customId == 'previous') {
                             page -= 1
-                            // no previous button allowed if its the 1st page (or negative page, error or empty leaderboard)
+                            // no previous button allowed if it's the 1st page (or negative page, error or empty leaderboard)
                             if (page <= 1) {
                                 await i.update({
                                     embeds: [await makeEmbed(page)],
@@ -279,26 +277,28 @@ export default new Command({
                                     ]
                                 })
                             }
-                        } else if (i.customId == 'next') {
-                            page += 1
-                            // no next button allowed if its the last page
-                            if (page == maxPage) {
-                                await i.update({
-                                    embeds: [await makeEmbed(page)],
-                                    components: [
-                                        new MessageActionRow().addComponents(previousButton)
-                                    ]
-                                })
-                            } else {
-                                await i.update({
-                                    embeds: [await makeEmbed(page)],
-                                    components: [
-                                        new MessageActionRow().addComponents(
-                                            previousButton,
-                                            nextButton
-                                        )
-                                    ]
-                                })
+                        } else { // noinspection GrazieInspection
+                            if (i.customId == 'next') {
+                                page += 1
+                                // No next button allowed if it's the last page
+                                if (page == maxPage) {
+                                    await i.update({
+                                        embeds: [await makeEmbed(page)],
+                                        components: [
+                                            new MessageActionRow().addComponents(previousButton)
+                                        ]
+                                    })
+                                } else {
+                                    await i.update({
+                                        embeds: [await makeEmbed(page)],
+                                        components: [
+                                            new MessageActionRow().addComponents(
+                                                previousButton,
+                                                nextButton
+                                            )
+                                        ]
+                                    })
+                                }
                             }
                         }
                         buttonListener()

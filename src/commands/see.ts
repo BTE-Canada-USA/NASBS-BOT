@@ -39,10 +39,10 @@ export default new Command({
             _id: submissionId
         }).lean()
 
-        // check if submission got rejet
+        // check if submission got rejected
         const isRejected = await checkIfRejected(submissionId)
 
-        // return if submision is unreviewed (doesnt exist in rejections or submissions db)
+        // return if submission is unreviewed (doesn't exist in rejections or submissions db)
         if (!submissionData && !isRejected) {
             return i.reply({
                 embeds: [
@@ -53,7 +53,7 @@ export default new Command({
             })
         }
 
-        // if its rejection, get rejction from db
+        // if its rejection, get rejection from db
         if (isRejected) {
             const rejectionData: RejectionInterface = await Rejection.findOne({
                 _id: submissionId
@@ -61,11 +61,11 @@ export default new Command({
 
             summary = `that submission was rejected : (\n\nFeedback: \`${rejectionData.feedback}\``
         } else {
-            // otherwise, its a reviewed submission
+            // otherwise, it's a reviewed submission
             // write the summary depending on which type of submission it was
             switch (submissionData.submissionType) {
                 case 'ONE':
-                    // if type ONE, change number size into a human readable size name
+                    // if type ONE, change number size into a human-readable size name
                     let sizeName: string
                     switch (submissionData.size) {
                         case 2:

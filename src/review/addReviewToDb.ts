@@ -9,7 +9,7 @@ import Builder from '../struct/Builder.js'
  * @param submissionData
  * @param countType buildingCount/roadKMs/sqm
  * @param countValue the amount of buildings/roadKMs/sqms
- * @param originalSubmission the og submission doc if edit, or null if initial review
+ * @param originalSubmission the og submission doc if edited, or null if initial review
  * @param i the review command interaction
  * @returns
  */
@@ -21,7 +21,7 @@ async function addReviewToDb(
     originalSubmission: SubmissionInterface | null,
     i: CommandInteraction
 ) {
-    // make sure edits dont change the submission type
+    // make sure edits don't change the submission type
     if (
         submissionData.edit &&
         originalSubmission &&

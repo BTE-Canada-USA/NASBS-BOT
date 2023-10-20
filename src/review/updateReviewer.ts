@@ -27,7 +27,7 @@ async function updateReviewerForAcceptance(
         guildId: submissionData.guildId
     }).lean()
 
-    // if reviewer is brand new fresh out of the oven newbie, dont need to calcualte avgs
+    // if reviewer is brand-new fresh out of the oven newbie, don't need to calculate avgs
     if (!reviewer) {
         await Reviewer.updateOne(
             {
@@ -49,7 +49,7 @@ async function updateReviewerForAcceptance(
             { upsert: true }
         ).lean()
     } else {
-        // otherwise, reviewer already has stats so update the avgs and eveyrthing
+        // otherwise, reviewer already has stats so update the avgs and everything
         // use formula for adding a value to the avg: newAvg = oldAvg + ((value - oldAvg)/ nValues)
         // nValues is the current number of values, so must +1 to reviewsWFeedback and acceptances
         // since they haven't been updated yet in db for this review
@@ -108,8 +108,8 @@ async function updateReviewerForAcceptance(
 
 /**
  * update reviewer doc for a declined review, add the feedback to their stats
- * @param reviwer
- * @param submissionData
+ * @param reviewer
+ * @param feedback
  */
 async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback: string) {
     // add feedback to the reviewer's avgs
@@ -164,7 +164,7 @@ async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
 
     // use formula for removing a value from avg
     // newAvg = (oldAvg * nValues - value) / (nValues - 1)
-    // dont need to do -1 for nValues since this value hasn't been updated yet in db,
+    // don't need to do -1 for nValues since this value hasn't been updated yet in db,
     // so reviewsWFeedback and acceptances is already the nValues - 1 we want
     const feedbackCharsAvg =
         (reviewer.feedbackCharsAvg * reviewer.reviewsWithFeedback -

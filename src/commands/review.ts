@@ -69,7 +69,7 @@ export default new Command({
 
         if (isEdit && originalSubmission == null && !isRejected) {
             return i.reply(
-                'that one hasnt been graded yet <:bonk:720758421514878998>! Use `edit=False`'
+                'that one hasn\'t been graded yet <:bonk:720758421514878998>! Use `edit=False`'
             )
         } else if (!isEdit && originalSubmission) {
             return i.reply(
@@ -100,7 +100,7 @@ export default new Command({
             feedback: feedback
         }
 
-        // get builder as member using fetch, not from msg.member because thats bad
+        // get builder as member using fetch, not from msg.member because that's bad
         let builder: GuildMember
         try {
             builder = await i.guild.members.fetch(builderId)

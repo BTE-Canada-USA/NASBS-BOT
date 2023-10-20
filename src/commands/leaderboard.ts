@@ -190,6 +190,7 @@ export default new Command({
         const filter = (button) => button.customId == 'previous' || button.customId == 'next'
 
         // listen for button pressed
+        // noinspection GrazieInspection
         function buttonListener() {
             replyMsg
                 .awaitMessageComponent({
@@ -200,7 +201,7 @@ export default new Command({
                 .then(async (i) => {
                     if (i.customId == 'previous') {
                         page -= 1
-                        // no previous button allowed if its the 1st page (or negative page, error or empty leaderboard)
+                        // no previous button allowed if it's the 1st page (or negative page, error or empty leaderboard)
                         if (page <= 1) {
                             await i.update({
                                 embeds: [await makeEmbed(page)],
@@ -219,7 +220,7 @@ export default new Command({
                         }
                     } else if (i.customId == 'next') {
                         page += 1
-                        // no next button allowed if its the last page
+                        // no next button allowed if it's the last page
                         if (page == maxPage) {
                             await i.update({
                                 embeds: [await makeEmbed(page)],

@@ -55,7 +55,7 @@ export default new Command({
                 )
             } else {
                 return i.reply(
-                    'that one hasnt been graded yet <:bonk:720758421514878998>! Use `/decline` instead'
+                    'that one hasn\'t been graded yet <:bonk:720758421514878998>! Use `/decline` instead'
                 )
             }
         }
