@@ -4,7 +4,7 @@ import Submission from '../struct/Submission.js'
 import Discord from 'discord.js'
 
 export default new Command({
-    name: 'progress',
+    name: 'pogress',
     description: 'View your rankup progress.',
     args: [
         {
