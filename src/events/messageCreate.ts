@@ -7,7 +7,7 @@ export default async function execute(client, msg) {
     }
 
     // production bot ignores test server, and test bot ignores other servers
-    // theres probbaly beter way to write this statement but i dont like thinking
+    // there's probably better way to write this statement, but I don't like thinking
     if (
         (!client.test && msg.guild?.id == '935926834019844097') ||
         (client.test && msg.guild?.id != '935926834019844097')
@@ -39,7 +39,7 @@ export default async function execute(client, msg) {
     let count = false
 
     // check content of each line of msg to see if one of them contains valid coordinates
-    // msg could contain multiple lines due to notes, etc, so thats why check each line
+    // msg could contain multiple lines due to notes, etc., so that's why check each line
     lines.forEach((line) => {
         line = line.replace(/#/g, '')
         if (coordsRegex.test(line) === true) {

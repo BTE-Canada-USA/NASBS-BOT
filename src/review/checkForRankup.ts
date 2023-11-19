@@ -47,7 +47,7 @@ async function checkForRankup(
         guildId: guild.id
     }).lean()
 
-    // if builder doesnt exist in db yet, they have 0 points
+    // if builder doesn't exist in db yet, they have 0 points
     const pointsTotal: number = builder?.pointsTotal || 0
 
     // otherwise, proceed with checking for rankup
@@ -191,7 +191,7 @@ async function checkForRankup(
                     pointsTotal: {
                         $sum: {
                             $cond: [
-                                // if submission type is ONE, add the submission's pointstotal to the sum (size doesnt matter [:meemaw:])
+                                // if submission type is ONE, add the submission's pointstotal to the sum (size doesn't matter [:meemaw:])
                                 { $eq: ['$submissionType', 'ONE'] },
                                 '$pointsTotal',
                                 // else the submission type must be MANY, so calculate # of points from all sizes and add it to the sum

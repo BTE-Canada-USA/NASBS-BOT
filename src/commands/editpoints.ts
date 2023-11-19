@@ -46,12 +46,12 @@ export default new Command({
         const isAccepted = await checkIfAccepted(submissionId)
         if (!isAccepted) {
             return i.reply(
-                'that one hasnt been graded yet <:bonk:720758421514878998>! `/review` it first'
+                'that one hasn\'t been graded yet <:bonk:720758421514878998>! `/review` it first'
             )
         }
 
         if (submissionMsg.author.id == i.user.id && i.user.id != '306529453826113539') {
-            return i.reply('you cannnot review your own builds <:bonk:720758421514878998>')
+            return i.reply('you cannot review your own builds <:bonk:720758421514878998>')
         }
 
         const builderId = submissionMsg.author.id

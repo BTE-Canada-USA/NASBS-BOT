@@ -16,7 +16,7 @@ async function run() {
     console.log('starting..')
     await client.loadDatabase()
 
-    // change all old submissions into new submissons
+    // change all old submissions into new submissions
     const submissionResult = await Submission.updateMany(
         { guildId: mergeFrom },
         { guildId: mergeInto }
@@ -46,7 +46,7 @@ async function run() {
             )
 
             // "remove" old user
-            // still exists in db just in case somehting messed up
+            // still exists in db just in case something messed up
             await Builder.updateOne(
                 { guildId: mergeFrom, id: user.id },
                 { guildId: `${mergeFromName}` }

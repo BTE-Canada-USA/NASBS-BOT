@@ -42,7 +42,7 @@ export default new Command({
             return i.reply('that submission has not been reviewed yet!')
         }
 
-        // get builder now that confirmed its a valid situation
+        // get builder now that confirmed it's a valid situation
         const builder = await client.users.fetch(submissionMsg.author.id)
         const dm = await builder.createDM()
 

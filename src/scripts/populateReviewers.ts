@@ -49,7 +49,7 @@ async function run() {
             .lean()
     }
 
-    console.log('done submision!ss!!')
+    console.log('done submissions!')
 
     // same for rejections
     const rejections: RejectionInterface[] = await Rejection.find({})
