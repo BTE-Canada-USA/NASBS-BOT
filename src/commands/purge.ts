@@ -106,6 +106,9 @@ export default new Command({
         await submissionMsg.reactions.cache.forEach((reaction) => reaction.remove())
         await submissionMsg.react('❌')
 
+        // update reviewer
+        await updateReviewerForPurge(originalSubmission)
+
         const dmsEnabled = await areDmsEnabled(userId)
 
         // Send a DM to the user if user wants dms
@@ -124,9 +127,6 @@ export default new Command({
                     `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                 )
             })
-
-            // update reviewer
-            await updateReviewerForPurge(originalSubmission)
 
             i.followUp(
                 `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback sent :weena!: \`${feedback}\``
