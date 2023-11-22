@@ -1,6 +1,8 @@
 import Discord, { MessageActionRow, MessageButton } from 'discord.js'
 import Command from '../struct/Command.js'
 import Reviewer, { ReviewerInterface } from '../struct/Reviewer.js'
+import Submission from '../struct/Submission.js'
+import Rejection from '../struct/Rejection.js'
 
 export default new Command({
     name: 'audit',
@@ -319,48 +321,158 @@ export default new Command({
                 guild = client.guildsData.get('global')
                 guildName = 'all build teams'
 
-                const results = await Reviewer.aggregate([
-                    { $match: { id: userId } },
-                    {
-                        $group: {
-                            _id: '$id',
-                            reviews: { $sum: '$reviews' },
-                            acceptances: { $sum: '$acceptances' },
-                            rejections: { $sum: '$rejections' },
-                            reviewsWithFeedback: { $sum: '$reviewsWithFeedback' },
-                            feedbackCharsAvgTotal: { $sum: '$feedbackCharsAvg' },
-                            feedbackWordsAvgTotal: { $sum: '$feedbackWordsAvg' },
-                            qualityAvgTotal: { $sum: '$qualityAvg' },
-                            complexityAvgTotal: { $sum: '$complexityAvg' },
-                            divideBy: { $sum: 1 }
-                        }
-                    },
-                    {
-                        $set: {
-                            feedbackCharsAvg: {
-                                $divide: ['$feedbackCharsAvgTotal', '$divideBy']
-                            },
-                            feedbackWordsAvg: {
-                                $divide: ['$feedbackWordsAvgTotal', '$divideBy']
-                            },
-                            qualityAvg: {
-                                $divide: ['$qualityAvgTotal', '$divideBy']
-                            },
-                            complexityAvg: {
-                                $divide: ['$complexityAvgTotal', '$divideBy']
-                            }
-                        }
-                    }
+                let averages = await Submission.aggregate([
+                    { $match: { reviewer: userId }},
+                    { $group: {
+                        _id: '$reviewer',
+                        quality_average: {$avg: "$quality"},
+                        complexity_average: {$avg: "$complexity"}
+                    }}
                 ])
 
-                userData = results[0]
+                let submissionFeedback = await Submission.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {feedback: {$exists: true}}
+                        ]
+                    }}, { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1},
+                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+                    }}
+                ])
+
+                let rejectionFeedback = await Rejection.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {feedback: {$exists: true}}
+                        ]
+                    }},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1},
+                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+                    }}
+                ])
+
+                let acceptanceCount = await Submission.aggregate([
+                    { $match: {reviewer: userId}},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1}
+                    }}
+                ])
+
+                let rejectionCount = await Rejection.aggregate([
+                    { $match: {reviewer: userId}},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1}
+                    }}
+                ])
+
+                let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+                let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+
+                userData = {} as ReviewerInterface;
+                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total;
+                userData.acceptances = acceptanceCount[0].total;
+                userData.rejections = rejectionCount[0].total;
+                userData.feedbackCharsAvg = feedbackCharsAverage;
+                userData.feedbackWordsAvg = feedbackWordsAverage;
+                userData.qualityAvg = averages[0].quality_average;
+                userData.complexityAvg = averages[0].complexity_average;
+
             } else {
                 // get reviewer in current guild
                 guildName = guild.name
-                userData = await Reviewer.findOne({
-                    id: userId,
-                    guildId: guild.id
-                }).lean()
+
+                let averages = await Submission.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {guildId: guild.id}
+                        ]
+                    }},
+                    { $group: {
+                        _id: '$reviewer',
+                        quality_average: {$avg: "$quality"},
+                        complexity_average: {$avg: "$complexity"}
+                    }}
+                ])
+
+                let submissionFeedback = await Submission.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {guildId: guild.id},
+                            {feedback: {$exists: true}}
+                        ]
+                    }}, { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1},
+                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+                    }}
+                ])
+
+                let rejectionFeedback = await Rejection.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {guildId: guild.id},
+                            {feedback: {$exists: true}}
+                        ]
+                    }},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1},
+                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+                    }}
+                ])
+
+                let acceptanceCount = await Submission.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {guildId: guild.id}
+                        ]
+                    }},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1}
+                    }}
+                ])
+
+                let rejectionCount = await Rejection.aggregate([
+                    { $match: {
+                        $and: [
+                            {reviewer: userId},
+                            {guildId: guild.id}
+                        ]
+                    }},
+                    { $group: {
+                        _id: '$reviewer',
+                        total: {$sum: 1}
+                    }}
+                ])
+
+                let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+                let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+
+                userData = {} as ReviewerInterface;
+                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total;
+                userData.acceptances = acceptanceCount[0].total;
+                userData.rejections = rejectionCount[0].total;
+                userData.feedbackCharsAvg = feedbackCharsAverage;
+                userData.feedbackWordsAvg = feedbackWordsAverage;
+                userData.qualityAvg = averages[0].quality_average;
+                userData.complexityAvg = averages[0].complexity_average;
             }
 
             // return if user does not exist

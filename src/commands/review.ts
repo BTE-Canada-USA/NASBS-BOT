@@ -56,7 +56,7 @@ export default new Command({
         }
 
         if (submissionMsg.author.id == i.user.id) {
-            return i.reply('you cannnot review your own builds <:bonk:720758421514878998>')
+            return i.reply('you cannot review your own builds <:bonk:720758421514878998>')
         }
 
         // Check if it already got declined / purged

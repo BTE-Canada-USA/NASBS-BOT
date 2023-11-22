@@ -1,7 +1,71 @@
 import { CommandInteraction } from 'discord.js'
 import Reviewer, { ReviewerInterface } from '../struct/Reviewer.js'
-import { SubmissionInterface } from '../struct/Submission.js'
+import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import { countWords } from '../utils/countWords.js'
+import Rejection from '../struct/Rejection.js'
+
+async function updateReviewerAverages(reviewer: ReviewerInterface) {
+
+    let averages = await Submission.aggregate([
+        { $match: {
+            $and: [
+                {reviewer: reviewer.id},
+                {guildId: reviewer.guildId}
+            ]
+        }},
+        { $group: {
+            _id: '$reviewer',
+            quality_average: {$avg: "$quality"},
+            complexity_average: {$avg: "$complexity"}
+        }}
+    ])
+
+    let submissionFeedback = await Submission.aggregate([
+        { $match: {
+            $and: [
+                {reviewer: reviewer.id},
+                {guildId: reviewer.guildId},
+                {feedback: {$exists: true}}
+            ]
+        }}, { $group: {
+            _id: '$reviewer',
+            total: {$sum: 1},
+            feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+            feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+        }}
+    ])
+
+    let rejectionFeedback = await Rejection.aggregate([
+        { $match: {
+            $and: [
+                {reviewer: reviewer.id},
+                {guildId: reviewer.guildId},
+                {feedback: {$exists: true}}
+            ]
+        }},
+        { $group: {
+            _id: '$reviewer',
+            total: {$sum: 1},
+            feedback_chars: {$sum: {$strLenCP: "$feedback"}},
+            feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
+        }}
+    ])
+
+    let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+    let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+
+    Reviewer.updateOne({
+        id: reviewer.id,
+        guildId: reviewer.guildId
+    },{
+        $set: {
+            complexityAvg: averages[0].complexity_average,
+            qualityAvg: averages[0].quality_average,
+            feedbackCharsAvg: feedbackCharsAverage,
+            feedbackWordsAvg: feedbackWordsAverage
+        }
+    })
+}
 
 /**
  * update reviewer doc for an accepted review including edits
@@ -50,26 +114,7 @@ async function updateReviewerForAcceptance(
         ).lean()
     } else {
         // otherwise, reviewer already has stats so update the avgs and everything
-        // use formula for adding a value to the avg: newAvg = oldAvg + ((value - oldAvg)/ nValues)
-        // nValues is the current number of values, so must +1 to reviewsWFeedback and acceptances
-        // since they haven't been updated yet in db for this review
-        const feedbackCharsAvg =
-            reviewer.feedbackCharsAvg +
-            (submissionData.feedback.length - reviewer.feedbackCharsAvg) /
-                (reviewer.reviewsWithFeedback + 1)
-
-        const feedbackWordsAvg =
-            reviewer.feedbackWordsAvg +
-            (countWords(submissionData.feedback) - reviewer.feedbackWordsAvg) /
-                (reviewer.reviewsWithFeedback + 1)
-
-        const qualityAvg =
-            reviewer.qualityAvg +
-            (submissionData.quality - reviewer.qualityAvg) / (reviewer.acceptances + 1)
-
-        const complexityAvg =
-            reviewer.complexityAvg +
-            (submissionData.complexity - reviewer.complexityAvg) / (reviewer.acceptances + 1)
+        await updateReviewerAverages(reviewer)
 
         // otherwise, increment acceptances, reviews, withfeedback, and set avgs to new avg
         await Reviewer.updateOne(
@@ -85,22 +130,6 @@ async function updateReviewerForAcceptance(
                 }
             }
         ).lean()
-
-        // mongoose cant $set and $inc in one query, so have two queries
-        await Reviewer.updateOne(
-            {
-                id: submissionData.reviewer,
-                guildId: submissionData.guildId
-            },
-            {
-                $set: {
-                    complexityAvg: complexityAvg,
-                    qualityAvg: qualityAvg,
-                    feedbackCharsAvg: feedbackCharsAvg,
-                    feedbackWordsAvg: feedbackWordsAvg
-                }
-            }
-        ).lean()
     }
 
     i.followUp('updated reviewer!')
@@ -113,13 +142,7 @@ async function updateReviewerForAcceptance(
  */
 async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback: string) {
     // add feedback to the reviewer's avgs
-    const feedbackCharsAvg =
-        (reviewer.feedbackCharsAvg * reviewer.reviewsWithFeedback - feedback.length) /
-        reviewer.reviewsWithFeedback
-
-    const feedbackWordsAvg =
-        (reviewer.feedbackWordsAvg * reviewer.reviewsWithFeedback - countWords(feedback)) /
-        reviewer.reviewsWithFeedback
+    await updateReviewerAverages(reviewer)
 
     // add a rejection and a review
     await Reviewer.updateOne(
@@ -132,20 +155,6 @@ async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback:
                 rejections: 1,
                 reviews: 1,
                 reviewsWithFeedback: 1
-            }
-        }
-    ).lean()
-
-    // update the feedback stats
-    await Reviewer.updateOne(
-        {
-            id: reviewer.id,
-            guildId: reviewer.guildId
-        },
-        {
-            $set: {
-                feedbackCharsAvg: feedbackCharsAvg,
-                feedbackWordsAvg: feedbackWordsAvg
             }
         }
     ).lean()
@@ -162,28 +171,6 @@ async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
         guildId: purgedSubmission.guildId
     }).lean()
 
-    // use formula for removing a value from avg
-    // newAvg = (oldAvg * nValues - value) / (nValues - 1)
-    // don't need to do -1 for nValues since this value hasn't been updated yet in db,
-    // so reviewsWFeedback and acceptances is already the nValues - 1 we want
-    const feedbackCharsAvg =
-        (reviewer.feedbackCharsAvg * reviewer.reviewsWithFeedback -
-            purgedSubmission.feedback.length) /
-        reviewer.reviewsWithFeedback
-
-    const feedbackWordsAvg =
-        (reviewer.feedbackWordsAvg * reviewer.reviewsWithFeedback -
-            countWords(purgedSubmission.feedback)) /
-        reviewer.reviewsWithFeedback
-
-    const qualityAvg =
-        (reviewer.qualityAvg * reviewer.acceptances - purgedSubmission.quality) /
-        reviewer.acceptances
-
-    const complexityAvg =
-        (reviewer.complexityAvg * reviewer.acceptances - purgedSubmission.complexity) /
-        reviewer.acceptances
-
     // update old reviewer doc
     await Reviewer.updateOne(
         { id: reviewer.id, guildId: purgedSubmission.guildId },
@@ -197,16 +184,6 @@ async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
     ).lean()
 
     // update old reviewer doc pt 2 because mongoose cant $set and $inc in 1 query
-    await Reviewer.updateOne(
-        { id: reviewer.id, guildId: purgedSubmission.guildId },
-        {
-            $set: {
-                complexityAvg: complexityAvg,
-                qualityAvg: qualityAvg,
-                feedbackCharsAvg: feedbackCharsAvg,
-                feedbackWordsAvg: feedbackWordsAvg
-            }
-        }
-    ).lean()
+    await updateReviewerAverages(reviewer)
 }
 export { updateReviewerForAcceptance, updateReviewerForRejection, updateReviewerForPurge }
