@@ -26,7 +26,9 @@ const globalArgs: CommandArg[] = [
         choices: [
             ['Event', 2],
             ['Landmark', 2],
-            ['Both', 4]
+            ['Both Event and Landmark', 4],
+            ['Focus', 1.5],
+            ['Both Focus and Landmark', 3.5]
         ],
         required: false,
         optionType: 'integer'
