@@ -16,7 +16,7 @@ export default new Command({
         const options = i.options
         const otherServer = options.getString('serverid')
 
-        let server = i.guildId
+        let server = i.guild.id
 
         if (otherServer) {
             server = otherServer
@@ -24,32 +24,37 @@ export default new Command({
 
         let buildings = await Submission.aggregate([
             { $match: {
-                    guildId: server
-                }},
+                guildId: server
+            }},
             { $project: {
-                    _id: 0,
-                    builds: {$cond: {
-                            if: { $eq: [ '$submissionType', 'ONE' ] },
-                            then: 1,
-                            else: {$cond: { if: { $eq: [ '$submissionType', 'MANY' ] },
-                                    then:
-                                        { $add: [ '$smallAmt', '$mediumAmt', '$largeAmt' ] },
-                                    else: 0
-                                }}
-                        }}
-                }},
-            { $group: {
-                    _id: 0,
-                    sumBuilds: { $sum: '$builds' }
+                _id: 0,
+                builds: {$cond: {
+                    if: { $eq: [ '$submissionType', 'ONE' ] },
+                    then: 1,
+                    else: {$cond: { if: { $eq: [ '$submissionType', 'MANY' ] },
+                        then:
+                            { $add: [ '$smallAmt', '$mediumAmt', '$largeAmt' ] },
+                        else: 0
+                    }}
                 }}
+            }},
+            { $group: {
+                _id: 0,
+                sumBuilds: { $sum: '$builds' }
+            }}
         ])
+
+        let numBuilds = 0;
+        if(buildings.length > 0) {
+            numBuilds = buildings[0].sumBuilds
+        }
 
         return i.reply({
             embeds: [
                 new Discord.MessageEmbed()
                     .setTitle(`Server Progress!`)
                     .setDescription(
-                        `This server has ${buildings[0].sumBuilds} completed buildings!`
+                        `This server has ${numBuilds} completed buildings!`
                     )
             ]
         })
