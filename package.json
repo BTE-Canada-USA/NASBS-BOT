@@ -16,8 +16,8 @@
     "typescript": "^4.9.4"
   },
   "scripts": {
-    "start": "ts-node --esm src/index.ts",
-    "deploy": "ts-node --esm src/deploy.ts"
+    "start": "node --loader ts-node/esm src/index.ts",
+    "deploy": "node --loader ts-node/esm src/deploy.ts"
   },
   "devDependencies": {
     "@types/node": "^18.11.17",
