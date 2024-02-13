@@ -6,6 +6,7 @@ import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js
 import validateFeedback from '../utils/validateFeedback.js'
 import { updateReviewerForRejection } from '../review/updateReviewer.js'
 import Reviewer from '../struct/Reviewer.js'
+import { countWords } from '../utils/countWords.js'
 
 export default new Command({
     name: 'decline',
@@ -58,12 +59,31 @@ export default new Command({
 
         // check if reviewer has reviewed yet or not. new reviewers cannot decline as a first review
         // because that breaks all the stats
-        const reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
+        let reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
 
         if (!reviewer) {
-            return i.reply(
-                'you have not reviewed any builds. due to technical limitations you must review at least 1 build before you may use the decline command.'
-            )
+            await Reviewer.updateOne(
+                {
+                    id: i.user.id,
+                    guildId: i.guild.id
+                },
+                {
+                    $set: {
+                        acceptances: 0,
+                        rejections: 0,
+                        complexityAvg: 0,
+                        qualityAvg: 0,
+                        feedbackCharsAvg: 0,
+                        feedbackWordsAvg: 0,
+                        reviews: 0,
+                        reviewsWithFeedback: 0
+                    }
+                },
+                { upsert: true }
+            ).lean()
+
+
+            reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
         }
 
         // dm builder
