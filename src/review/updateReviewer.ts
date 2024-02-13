@@ -51,8 +51,13 @@ async function updateReviewerAverages(reviewer: ReviewerInterface) {
         }}
     ])
 
-    let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
-    let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+    let feedbackCharsAverage = 0;
+    let feedbackWordsAverage = 0;
+
+    if(submissionFeedback[0] != undefined && rejectionFeedback[0] != undefined) {
+        feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+        feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+    }
 
     Reviewer.updateOne({
         id: reviewer.id,
