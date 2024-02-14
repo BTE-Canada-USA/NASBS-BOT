@@ -51,16 +51,28 @@ async function updateReviewerAverages(reviewer: ReviewerInterface) {
         }}
     ])
 
-    let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
-    let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+    let feedbackCharsAverage = 0;
+    let feedbackWordsAverage = 0;
+    let complexityAverage = 0;
+    let qualityAverage = 0;
+
+    if(submissionFeedback[0] != undefined && rejectionFeedback[0] != undefined) {
+        feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total);
+        feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total);
+    }
+
+    if(averages[0] != undefined) {
+        complexityAverage = averages[0].complexity_average;
+        qualityAverage = averages[0].quality_average;
+    }
 
     Reviewer.updateOne({
         id: reviewer.id,
         guildId: reviewer.guildId
     },{
         $set: {
-            complexityAvg: averages[0].complexity_average,
-            qualityAvg: averages[0].quality_average,
+            complexityAvg: complexityAverage,
+            qualityAvg: qualityAverage,
             feedbackCharsAvg: feedbackCharsAverage,
             feedbackWordsAvg: feedbackWordsAverage
         }
