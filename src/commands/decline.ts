@@ -6,7 +6,6 @@ import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js
 import validateFeedback from '../utils/validateFeedback.js'
 import { updateReviewerForRejection } from '../review/updateReviewer.js'
 import Reviewer from '../struct/Reviewer.js'
-import { countWords } from '../utils/countWords.js'
 
 export default new Command({
     name: 'decline',
