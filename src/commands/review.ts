@@ -151,6 +151,7 @@ export default new Command({
                 originalSubmission,
                 i
             )
+            await checkForRankup(builder, guildData, i)
             await updateReviewerForAcceptance(originalSubmission, submissionData, i)
             await sendDm(builder, guildData, reply, i)
             await addCheckmarkReaction(submissionMsg)
