@@ -13,5 +13,5 @@ jobs:
         with:
           # You can target a project in a different organization
           # to the issue
-          project-url: https://github.com/orgs/BTE-Canada-USA/projects/2/views/1
+          project-url: https://github.com/orgs/BTE-Canada-USA/projects/2
           github-token: ${{ secrets.MY_GITHUB_TOKEN }}
