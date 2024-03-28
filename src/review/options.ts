@@ -31,7 +31,7 @@ const globalArgs: CommandArg[] = [
             ['Both Focus and Landmark', 3.5]
         ],
         required: false,
-        optionType: 'integer'
+        optionType: 'number'
     },
     {
         name: 'edit',
