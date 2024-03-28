@@ -1,8 +1,8 @@
 import Command from '../struct/Command.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
-import { globalArgs, oneArgs, manyArgs, landArgs, roadArgs } from '../review/options.js'
+import { globalArgs, landArgs, manyArgs, oneArgs, roadArgs } from '../review/options.js'
 import { checkForRankup } from '../review/checkForRankup.js'
-import { GuildMember, Message, MessageReaction, TextChannel } from 'discord.js'
+import { GuildMember, Message, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import { addReviewToDb } from '../review/addReviewToDb.js'
@@ -84,7 +84,7 @@ export default new Command({
         // set variables shared by all subcommands
         await i.reply('doing stuff...')
         const builderId = submissionMsg.author.id
-        const bonus = options.getInteger('bonus') || 1
+        const bonus = options.getNumber('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
         let pointsTotal: number
         let submissionData: SubmissionInterface = {
