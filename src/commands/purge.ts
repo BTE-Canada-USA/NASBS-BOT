@@ -2,10 +2,9 @@ import Command from '../struct/Command.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 import Submission from '../struct/Submission.js'
 import Builder from '../struct/Builder.js'
-import { checkIfRejected } from '../utils/checkForSubmission.js'
-import validateFeedback from '../utils/validateFeedback.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
 import { updateReviewerForPurge } from '../review/updateReviewer.js'
+import Rejection from '../struct/Rejection.js'
 
 export default new Command({
     name: 'purge',
@@ -17,55 +16,47 @@ export default new Command({
             description: 'Msg id of the submission',
             required: true,
             optionType: 'string'
-        },
-        {
-            name: 'feedback',
-            description: 'feedback for submission (1700 chars max)',
-            required: true,
-            optionType: 'string'
         }
     ],
     async run(i, client) {
         const options = i.options
         const guild = client.guildsData.get(i.guild.id)
         const submissionId = options.getString('submissionid')
-        const feedback = validateFeedback(options.getString('feedback'))
         const submitChannel = (await client.channels.fetch(guild.submitChannel)) as TextChannel
 
         let submissionMsg: Message
+        let submissionLink = '[Link could not be generated]'
 
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
+            submissionLink = `[Link](${submissionMsg.url})`
         } catch (e) {
-            return i.reply(
-                `'${submissionId}' is not a valid message ID from the build submit channel!`
+            await i.reply(
+                `'${submissionId}' is not a message ID from the build submit channel on this server... checking anyways`
             )
         }
 
-        // Check if it already got reviewed
-        const originalSubmission = await Submission.findOne({
-            _id: submissionId
-        }).lean()
-        if (originalSubmission == null) {
-            // Check if it already got declined / purged
-            const isRejected = await checkIfRejected(submissionMsg.id)
-            if (isRejected) {
-                return i.reply(
-                    'that one has already been rejected <:bonk:720758421514878998>!'
-                )
-            } else {
-                return i.reply(
-                    'that one hasn\'t been graded yet <:bonk:720758421514878998>! Use `/decline` instead'
-                )
+        const originalSubmission = await Submission.findById(submissionId)
+
+        // Gate to ensure submission exists
+        if (!originalSubmission) {
+            const rejectedSubmission = await Rejection.findById(submissionId)
+            if (rejectedSubmission) {
+                return i.reply('that one has already been rejected <:bonk:720758421514878998>!')
             }
+
+            return i.reply('Could not find a submission with that ID')
+        }
+
+        // Gate to ensure submission belongs to the server that is trying to remove it
+        if (originalSubmission.guildId != i.guild.id) {
+            return i.reply('This submission belongs to another server and has not been merged. You do not have permission to purge it.')
         }
 
         await i.reply('doing stuff...')
 
         // Delete submission from the database
-        await Submission.deleteOne({
-            _id: submissionId
-        }).catch((err) => {
+        await originalSubmission.deleteOne().catch((err) => {
             console.log(err)
             return i.followUp(`ERROR HAPPENED: ${err}\n Please try again`)
         })
@@ -88,9 +79,9 @@ export default new Command({
         })()
         const roadKMsIncrement = -originalSubmission.roadKMs || 0
         const sqmIncrement = -originalSubmission.sqm || 0
-        const userId = submissionMsg.author.id
+
         await Builder.updateOne(
-            { id: userId, guildId: i.guild.id },
+            { id: originalSubmission.userId, guildId: i.guild.id },
             {
                 $inc: {
                     pointsTotal: pointsIncrement,
@@ -100,16 +91,17 @@ export default new Command({
                 }
             },
             { upsert: true }
-        ).lean()
+        )
 
         // Remove all bot reactions, then add a '❌' reaction
-        await submissionMsg.reactions.cache.forEach((reaction) => reaction.remove())
-        await submissionMsg.react('❌')
+        if (submissionMsg) {
+            submissionMsg.reactions.cache.forEach((reaction) => reaction.remove())
+        }
 
         // update reviewer
         await updateReviewerForPurge(originalSubmission)
 
-        const dmsEnabled = await areDmsEnabled(userId)
+        const dmsEnabled = await areDmsEnabled(originalSubmission.userId)
 
         // Send a DM to the user if user wants dms
         if (dmsEnabled) {
@@ -117,24 +109,19 @@ export default new Command({
             const dm = await builder.createDM()
 
             const embed = new Discord.MessageEmbed()
-                .setTitle(`Your recent build submission has been removed.`)
-                .setDescription(
-                    `__[Submission link](${submissionMsg.url})__\n\nYou can use this feedback to improve your build then resubmit it to gain points!\n\n\`${feedback}\``
-                )
+            .setTitle(`Your recent build submission has been removed.`)
+            .setDescription(
+                `__${submissionLink}__\n\n`
+            )
 
             await dm.send({ embeds: [embed] }).catch((err) => {
                 return i.followUp(
                     `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
                 )
             })
-
-            i.followUp(
-                `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback sent :weena!: \`${feedback}\``
-            )
-        } else {
-            i.followUp(
-                `PURGED SUBMISSION [Link](${submissionMsg.url}) and feedback not because this user hates dms :weena!: \`${feedback}\``
-            )
         }
+        i.followUp(
+            `PURGED SUBMISSION ${submissionLink}`
+        )
     }
 })
