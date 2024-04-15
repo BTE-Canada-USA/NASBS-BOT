@@ -1,8 +1,12 @@
-import Discord, { MessageActionRow, MessageButton } from 'discord.js'
+import Discord from 'discord.js'
 import Command from '../struct/Command.js'
-import Reviewer, { ReviewerInterface } from '../struct/Reviewer.js'
+import { ReviewerInterface } from '../struct/Reviewer.js'
 import Submission from '../struct/Submission.js'
 import Rejection from '../struct/Rejection.js'
+import { pagination, TypesButtons } from '@devraelfreeze/discordjs-pagination'
+
+const ITEMS_PER_PAGE = 10
+const MAX_SIZE = 50
 
 export default new Command({
     name: 'audit',
@@ -64,252 +68,170 @@ export default new Command({
         // leaderboard of reviewers by metric
         if (i.options.getSubcommand() == 'leaderboard') {
             const metric: string = options.getString('metric')
-            const pageLength = 10
+
             let page = 1
             let reviewers
             let guildName: string
 
-            if (global) {
-                guildName = 'all build teams'
-                guild = client.guildsData.get('global')
+            let queryFilter = []
 
-                // if metric is one that needs to be averaged, do that
-                // for feedback, average by total reviewsWithFeedback
-                if (metric == 'feedbackChars' || metric == 'feedbackWords') {
-                    reviewers = await Reviewer.aggregate([
-                        {
-                            $group: {
-                                _id: '$id',
-                                metricTotal: { $sum: `$${metric}` },
-                                divideBy: {
-                                    $sum: {
-                                        $cond: {
-                                            if: { $gt: ['$reviewsWithFeedback', 0] },
-                                            then: 1,
-                                            else: 0
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            $set: {
-                                globalAvg: {
-                                    // when dividing by number of servers, make sure it's more than 0 for those with no acceptances/withfeedbacks
-                                    $divide: [
-                                        '$metricTotal',
-                                        {
-                                            $cond: {
-                                                if: { $eq: ['$divideBy', 0] },
-                                                then: 1,
-                                                else: '$divideBy'
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        },
-                        { $sort: { globalAvg: -1 } }
-                    ])
-                } else if (metric == 'qualityAvg' || metric == 'complexityAvg') {
-                    // for quality/complex, average by total acceptances
-                    reviewers = await Reviewer.aggregate([
-                        {
-                            $group: {
-                                _id: '$id',
-                                metricTotal: { $sum: `$${metric}` },
-                                // every time a user is grouped again, increment this by 1 so the total average is sum of [metric] / n reviewer guild instances
-                                // but make sure it even has acceptances in that guild, otherwise we cant possibly be adding any quality/complexity from it
-                                divideBy: {
-                                    $sum: {
-                                        $cond: {
-                                            if: { $gt: ['$acceptances', 0] },
-                                            then: 1,
-                                            else: 0
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            $set: {
-                                count: {
-                                    $divide: [
-                                        '$metricTotal',
-                                        {
-                                            $cond: {
-                                                if: { $eq: ['$divideBy', 0] },
-                                                then: 1,
-                                                else: '$divideBy'
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        },
-                        { $sort: { count: -1 } }
-                    ])
-                } else {
-                    // otherwise, just add the total sum because no stupid averaging needed
-                    reviewers = await Reviewer.aggregate([
-                        {
-                            $group: {
-                                _id: '$id',
-                                count: { $sum: `$${metric}` }
-                            }
-                        },
-                        { $sort: { count: -1 } }
-                    ])
-                }
+            if (global) {
+                guildName = 'All Build Teams'
+                guild = client.guildsData.get('global')
             } else {
                 // for non-global, just find within this guild
-                guildName = guild.name
+                guildName = i.guild.name
 
-                reviewers = await Reviewer.aggregate([
-                    { $match: { guildId: guild.id } },
-                    {
-                        $group: {
-                            _id: '$id',
-                            count: { $sum: `$${metric}` }
-                        }
-                    },
-                    { $sort: { count: -1 } }
-                ])
+                queryFilter = [{
+                    $match: { guildId: i.guild.id }
+                }]
             }
-            const maxPage = Math.ceil(reviewers.length / pageLength)
 
-            // make buttons
-            const previousButton = new MessageButton()
-                .setCustomId('previous')
-                .setLabel('Previous page 🔙')
-                .setStyle('PRIMARY')
-
-            const nextButton = new MessageButton()
-                .setCustomId('next')
-                .setLabel('Next page ➡')
-                .setStyle('PRIMARY')
-
-            // create the embed for a page of leaderboard
-            async function makeEmbed(page) {
-                let content = ''
-
-                for (let l = page * pageLength - pageLength; l < page * pageLength; l++) {
-                    if (!reviewers[l]) break
-
-                    // round the value to 3 decimal
-                    const value = (() => {
-                        if (/[\.]/.test(reviewers[l].count)) {
-                            // if the value is a float
-                            return parseFloat(reviewers[l].count).toFixed(3)
-                        } else {
-                            // if the value is an int
-                            return reviewers[l].count
-                        }
-                    })()
-
-                    // if value is 0, leave because we're at the end of ppl with actual stats
-                    if (value == 0) {
-                        break
+            let submissionQuery = await Submission.aggregate([
+                ...queryFilter,
+                {
+                    $group: {
+                        _id: '$reviewer',
+                        acceptedCount: { $count: {} },
+                        feedbackChars: { $sum: { $strLenCP: { $ifNull: ['$feedback', ''] } } },
+                        feedbackWords: { $sum: { $size: { $ifNull: [{ $split: ['$feedback', ' '] }, []] } } },
+                        qualityAverage: { $avg: '$quality' },
+                        complexityAverage: { $avg: '$complexity' }
                     }
+                }
+            ])
 
-                    // get user to display their username/#
-                    const user = await client.users.fetch(reviewers[l]._id)
+            let rejectionQuery = await Rejection.aggregate([
+                ...queryFilter,
+                {
+                    $group: {
+                        _id: '$reviewer',
+                        rejectionCount: { $count: {} },
+                        feedbackChars: { $sum: { $strLenCP: { $ifNull: ['$feedback', ''] } } },
+                        feedbackWords: { $sum: { $size: { $ifNull: [{ $split: ['$feedback', ' '] }, []] } } }
+                    }
+                }
+            ])
 
-                    // add the next line to this page's msg content
-                    content += `**${l + 1}.** \`${user.username}#${
-                        user.discriminator
-                    }\`: ${value}\n\n`
+            let finalCollection = {}
+
+            submissionQuery.forEach((res) => {
+                finalCollection[res._id] = {
+                    acceptedCount: res.acceptedCount,
+                    feedbackCharacters: res.feedbackChars,
+                    feedbackWords: res.feedbackWords,
+                    qualityAverage: res.qualityAverage,
+                    complexityAverage: res.complexityAverage,
+                    rejectedCount: 0
+                }
+            })
+
+            rejectionQuery.forEach((res) => {
+                if (!finalCollection[res._id]) {
+                    finalCollection[res._id] = {
+                        acceptedCount: 0,
+                        feedbackCharacters: 0,
+                        feedbackWords: 0,
+                        qualityAverage: 0,
+                        complexityAverage: 0
+                    }
                 }
 
-                return new Discord.MessageEmbed()
-                    .setTitle(
-                        `${metric} leaderboard for  ${guild.emoji} ${guildName} ${guild.emoji}!`
-                    )
-                    .setDescription(content)
+                finalCollection[res._id].rejectedCount = res.rejectionCount
+                finalCollection[res._id].feedbackCharacters += res.feedbackChars
+                finalCollection[res._id].feedbackWords += res.feedbackWords
+            })
+
+            let leaderboard = []
+
+            for (const [key, value] of Object.entries(finalCollection)) {
+                let res = {
+                    reviews: () => {
+                        return value['acceptedCount'] + value['rejectedCount']
+                    },
+                    acceptances: () => {
+                        return value['acceptedCount']
+                    },
+                    rejections: () => {
+                        return value['rejectedCount']
+                    },
+                    feedbackCharsAvg: () => {
+                        return value['feedbackCharacters'] / (value['acceptedCount'] + value['rejectedCount'])
+                    },
+                    feedbackWordsAvg: () => {
+                        return value['feedbackWords'] / (value['acceptedCount'] + value['rejectedCount'])
+                    },
+                    qualityAvg: () => {
+                        return value['qualityAverage']
+                    },
+                    complexityAvg: () => {
+                        return value['complexityAverage']
+                    }
+                }
+
+                leaderboard.push({ id: key, val: res[metric]().toFixed(2).replace(/[.,]00$/, '') })
             }
 
-            // reply with page 1 and next button
-            // if there's only 1 leaderboard page, no buttons
-            // use less than one, because an empty leaderboard has no pages
-            if (maxPage <= 1) {
-                await i.reply({
-                    embeds: [await makeEmbed(page)]
-                })
-            } else {
-                // otherwise, add a next button
-                await i.reply({
-                    embeds: [await makeEmbed(1)],
-                    components: [new MessageActionRow().addComponents(nextButton)]
-                })
+            leaderboard.sort((a, b) => {
+                return b['val'] - a['val']
+            })
+
+            leaderboard = leaderboard.slice(0, MAX_SIZE)
+
+            const pluralsMap = {
+                reviews: 'reviews',
+                acceptances: 'accepted reviews',
+                rejections: 'rejected reviews',
+                feedbackCharsAvg: 'characters averaged on feedback',
+                feedbackWordsAvg: 'words averaged on feedback',
+                qualityAvg: 'average quality reviewed',
+                complexityAvg: 'average complexity reviewed'
             }
 
-            const reply = await i.fetchReply()
-            const replyMsg = await i.channel.messages.fetch(reply.id)
+            let pages = []
 
-            const filter = (button) =>
-                button.customId == 'previous' || button.customId == 'next'
-
-            // listen for button pressed
-            function buttonListener() {
-                replyMsg
-                    .awaitMessageComponent({
-                        filter,
-                        time: 12 * 60 * 60 * 1000
-                    })
-                    // when button is pressed, update the embed and page value accordingly, then start another listener
-                    .then(async (i) => {
-                        if (i.customId == 'previous') {
-                            page -= 1
-                            // no previous button allowed if it's the 1st page (or negative page, error or empty leaderboard)
-                            if (page <= 1) {
-                                await i.update({
-                                    embeds: [await makeEmbed(page)],
-                                    components: [
-                                        new MessageActionRow().addComponents(nextButton)
-                                    ]
-                                })
-                            } else {
-                                await i.update({
-                                    embeds: [await makeEmbed(page)],
-                                    components: [
-                                        new MessageActionRow().addComponents(
-                                            previousButton,
-                                            nextButton
-                                        )
-                                    ]
-                                })
-                            }
-                        } else { // noinspection GrazieInspection
-                            if (i.customId == 'next') {
-                                page += 1
-                                // No next button allowed if it's the last page
-                                if (page == maxPage) {
-                                    await i.update({
-                                        embeds: [await makeEmbed(page)],
-                                        components: [
-                                            new MessageActionRow().addComponents(previousButton)
-                                        ]
-                                    })
-                                } else {
-                                    await i.update({
-                                        embeds: [await makeEmbed(page)],
-                                        components: [
-                                            new MessageActionRow().addComponents(
-                                                previousButton,
-                                                nextButton
-                                            )
-                                        ]
-                                    })
-                                }
-                            }
-                        }
-                        buttonListener()
-                    })
-                    .catch((err) => {
-                        return err
-                    })
+            if (leaderboard.length == 0) {
+                pages = [
+                    new Discord.MessageEmbed()
+                    .setTitle(`Doesn't look like any reviews have happened here!`)
+                    .setDescription('')
+                ]
             }
-            buttonListener()
+
+            for (let i = 0; i < Math.ceil(leaderboard.length / ITEMS_PER_PAGE); i++) {
+                const startIndex = i * ITEMS_PER_PAGE
+                const endIndex = startIndex + ITEMS_PER_PAGE
+                const embed = new Discord.MessageEmbed()
+                .setTitle(`${metric.charAt(0).toUpperCase() + metric.slice(1)} Leaderboard for ${guild.emoji} ${guildName} ${guild.emoji}`)
+                .setDescription(leaderboard.map((element, index) => {
+                    return `**${index + 1}.** <@${element.id}>: ${element.val} ${pluralsMap[metric]}`
+                }).slice(startIndex, endIndex).join('\n\n'))
+
+                pages.push(embed)
+            }
+
+            await pagination({
+                embeds: pages,
+                author: i.user,
+                interaction: i,
+                ephemeral: true,
+                time: 60 * 1000,
+                disableButtons: true,
+                fastSkip: false,
+                pageTravel: false,
+                buttons: [
+                    {
+                        value: TypesButtons.previous,
+                        label: 'Previous',
+                        style: 'PRIMARY'
+                    },
+                    {
+                        value: TypesButtons.next,
+                        label: 'Next',
+                        style: 'PRIMARY'
+                    }
+                ]
+            })
         } else if (i.options.getSubcommand() == 'individual') {
             // ---------------------------------------------- INDIVIDUAL ----------------------------------------------
             const user = i.options.getUser('user')
@@ -322,157 +244,191 @@ export default new Command({
                 guildName = 'all build teams'
 
                 let averages = await Submission.aggregate([
-                    { $match: { reviewer: userId }},
-                    { $group: {
-                        _id: '$reviewer',
-                        quality_average: {$avg: "$quality"},
-                        complexity_average: {$avg: "$complexity"}
-                    }}
+                    { $match: { reviewer: userId } },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            quality_average: { $avg: '$quality' },
+                            complexity_average: { $avg: '$complexity' }
+                        }
+                    }
                 ])
 
                 let submissionFeedback = await Submission.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {feedback: {$exists: true}}
-                        ]
-                    }}, { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1},
-                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { feedback: { $exists: true } }
+                            ]
+                        }
+                    }, {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 },
+                            feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                            feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+                        }
+                    }
                 ])
 
                 let rejectionFeedback = await Rejection.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {feedback: {$exists: true}}
-                        ]
-                    }},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1},
-                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { feedback: { $exists: true } }
+                            ]
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 },
+                            feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                            feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+                        }
+                    }
                 ])
 
                 let acceptanceCount = await Submission.aggregate([
-                    { $match: {reviewer: userId}},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1}
-                    }}
+                    { $match: { reviewer: userId } },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 }
+                        }
+                    }
                 ])
 
                 let rejectionCount = await Rejection.aggregate([
-                    { $match: {reviewer: userId}},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1}
-                    }}
+                    { $match: { reviewer: userId } },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 }
+                        }
+                    }
                 ])
 
                 let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
                 let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
 
-                userData = {} as ReviewerInterface;
-                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total;
-                userData.acceptances = acceptanceCount[0].total;
-                userData.rejections = rejectionCount[0].total;
-                userData.feedbackCharsAvg = feedbackCharsAverage;
-                userData.feedbackWordsAvg = feedbackWordsAverage;
-                userData.qualityAvg = averages[0].quality_average;
-                userData.complexityAvg = averages[0].complexity_average;
+                userData = {} as ReviewerInterface
+                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total
+                userData.acceptances = acceptanceCount[0].total
+                userData.rejections = rejectionCount[0].total
+                userData.feedbackCharsAvg = feedbackCharsAverage
+                userData.feedbackWordsAvg = feedbackWordsAverage
+                userData.qualityAvg = averages[0].quality_average
+                userData.complexityAvg = averages[0].complexity_average
 
             } else {
                 // get reviewer in current guild
                 guildName = guild.name
 
                 let averages = await Submission.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {guildId: guild.id}
-                        ]
-                    }},
-                    { $group: {
-                        _id: '$reviewer',
-                        quality_average: {$avg: "$quality"},
-                        complexity_average: {$avg: "$complexity"}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { guildId: guild.id }
+                            ]
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            quality_average: { $avg: '$quality' },
+                            complexity_average: { $avg: '$complexity' }
+                        }
+                    }
                 ])
 
                 let submissionFeedback = await Submission.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {guildId: guild.id},
-                            {feedback: {$exists: true}}
-                        ]
-                    }}, { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1},
-                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { guildId: guild.id },
+                                { feedback: { $exists: true } }
+                            ]
+                        }
+                    }, {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 },
+                            feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                            feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+                        }
+                    }
                 ])
 
                 let rejectionFeedback = await Rejection.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {guildId: guild.id},
-                            {feedback: {$exists: true}}
-                        ]
-                    }},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1},
-                        feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-                        feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { guildId: guild.id },
+                                { feedback: { $exists: true } }
+                            ]
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 },
+                            feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                            feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+                        }
+                    }
                 ])
 
                 let acceptanceCount = await Submission.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {guildId: guild.id}
-                        ]
-                    }},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { guildId: guild.id }
+                            ]
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 }
+                        }
+                    }
                 ])
 
                 let rejectionCount = await Rejection.aggregate([
-                    { $match: {
-                        $and: [
-                            {reviewer: userId},
-                            {guildId: guild.id}
-                        ]
-                    }},
-                    { $group: {
-                        _id: '$reviewer',
-                        total: {$sum: 1}
-                    }}
+                    {
+                        $match: {
+                            $and: [
+                                { reviewer: userId },
+                                { guildId: guild.id }
+                            ]
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$reviewer',
+                            total: { $sum: 1 }
+                        }
+                    }
                 ])
 
                 let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
                 let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
 
-                userData = {} as ReviewerInterface;
-                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total;
-                userData.acceptances = acceptanceCount[0].total;
-                userData.rejections = rejectionCount[0].total;
-                userData.feedbackCharsAvg = feedbackCharsAverage;
-                userData.feedbackWordsAvg = feedbackWordsAverage;
-                userData.qualityAvg = averages[0].quality_average;
-                userData.complexityAvg = averages[0].complexity_average;
+                userData = {} as ReviewerInterface
+                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total
+                userData.acceptances = acceptanceCount[0].total
+                userData.rejections = rejectionCount[0].total
+                userData.feedbackCharsAvg = feedbackCharsAverage
+                userData.feedbackWordsAvg = feedbackWordsAverage
+                userData.qualityAvg = averages[0].quality_average
+                userData.complexityAvg = averages[0].complexity_average
             }
 
             // return if user does not exist
@@ -489,29 +445,29 @@ export default new Command({
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed()
-                        .setTitle(`REVIEW ME PLS :AHEGAO_PLEAD:`)
-                        .setDescription(
-                            `\`${user.username}#${user.discriminator}\` has :tada: ***${
-                                userData.reviews
-                            }***  :tada: reviews in ${guild.emoji} ${guildName} ${
-                                guild.emoji
-                            }!!\n\nNumber of acceptances: :white_check_mark: ***${
-                                userData.acceptances || 0
-                            }***  :white_check_mark: !!!\nNumber of rejections: :x: ***${
-                                userData.rejections || 0
-                            }***  :x:\nAverage feedback characters: :keyboard: ***${
-                                userData.feedbackCharsAvg?.toFixed(3) || 0
-                            }***  :keyboard:\nAverage feedback words: :pencil: ***${
-                                userData.feedbackWordsAvg?.toFixed(3) || 0
-                            }*** :pencil:\nAverage quality: :gem: ***${
-                                userData.qualityAvg?.toFixed(3) || 0
-                            }*** :gem:\nAverage complexity: :smiley_cat: ***${
-                                userData.complexityAvg?.toFixed(3) || 0
-                            }*** :smiley_cat:`
-                        )
-                        .setFooter({
-                            text: 'average feedback calculations exclude any reviews without feedback.\nonly rejections after dec 24 2022 are recorded in database.'
-                        })
+                    .setTitle(`REVIEW ME PLS :AHEGAO_PLEAD:`)
+                    .setDescription(
+                        `\`${user.username}#${user.discriminator}\` has :tada: ***${
+                            userData.reviews
+                        }***  :tada: reviews in ${guild.emoji} ${guildName} ${
+                            guild.emoji
+                        }!!\n\nNumber of acceptances: :white_check_mark: ***${
+                            userData.acceptances || 0
+                        }***  :white_check_mark: !!!\nNumber of rejections: :x: ***${
+                            userData.rejections || 0
+                        }***  :x:\nAverage feedback characters: :keyboard: ***${
+                            userData.feedbackCharsAvg?.toFixed(3) || 0
+                        }***  :keyboard:\nAverage feedback words: :pencil: ***${
+                            userData.feedbackWordsAvg?.toFixed(3) || 0
+                        }*** :pencil:\nAverage quality: :gem: ***${
+                            userData.qualityAvg?.toFixed(3) || 0
+                        }*** :gem:\nAverage complexity: :smiley_cat: ***${
+                            userData.complexityAvg?.toFixed(3) || 0
+                        }*** :smiley_cat:`
+                    )
+                    .setFooter({
+                        text: 'average feedback calculations exclude any reviews without feedback.\nonly rejections after dec 24 2022 are recorded in database.'
+                    })
                 ]
             })
         }
