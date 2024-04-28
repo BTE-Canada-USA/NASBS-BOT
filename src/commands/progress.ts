@@ -209,7 +209,7 @@ export default new Command({
                 }
             ])
 
-            if (largeOrMediums != undefined) {
+            if (largeOrMediums[0] != undefined) {
                 points = largeOrMediums[0].points
             }
 
