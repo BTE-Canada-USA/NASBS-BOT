@@ -1,12 +1,12 @@
-import { Client, Intents, Collection } from 'discord.js'
+import { Client, Collection, Intents } from 'discord.js'
 import fs from 'fs'
 import mongoose from 'mongoose'
-import path from 'path'
+import path, { dirname } from 'path'
 import config from '../../config.js'
 import Command from './Command.js'
 import Guild, { GuildInterface } from './Guild.js'
-import { dirname } from 'path'
 import { fileURLToPath } from 'url'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 class Bot extends Client {
@@ -30,6 +30,7 @@ class Bot extends Client {
     }
 
     async loadDatabase() {
+        mongoose.set('strictQuery', true)
         await mongoose.connect(config.mongoURI)
     }
 
