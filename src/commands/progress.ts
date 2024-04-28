@@ -166,6 +166,8 @@ export default new Command({
             // check progress towards MASTER BUILDER
             // get points for good/excellent quality medium or above
 
+            let points = 0
+
             const largeOrMediums = await Submission.aggregate([
                 {
                     $match: {
@@ -207,6 +209,10 @@ export default new Command({
                 }
             ])
 
+            if (largeOrMediums != undefined) {
+                points = largeOrMediums[0].points
+            }
+
             await i.reply({
                 embeds: [
                     new Discord.MessageEmbed().setDescription(
@@ -217,7 +223,7 @@ export default new Command({
                         }\n\n**Progress towards ${guildData.rank3.name}:**\n${
                             userData.pointsTotal
                         }**/${guildData.rank3.points}** points\n${
-                            largeOrMediums[0].points
+                            points
                         }**/${100}** points from Good/Excellent quality Medium builds`
                     )
                 ]
