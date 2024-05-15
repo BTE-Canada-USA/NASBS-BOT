@@ -1,6 +1,7 @@
-import Discord, { MessageActionRow, MessageButton } from 'discord.js'
+import Discord from 'discord.js'
 import Command from '../struct/Command.js'
-import Builder from '../struct/Builder.js'
+import Submission from '../struct/Submission.js'
+import { pagination, TypesButtons } from '@devraelfreeze/discordjs-pagination'
 
 /**
  * An individual user returned from the aggregation query
@@ -9,6 +10,9 @@ interface LeaderboardUser {
     _id: string
     count: string
 }
+
+const ITEMS_PER_PAGE = 10
+const MAX_SIZE = 50
 
 export default new Command({
     name: 'leaderboard',
@@ -35,217 +39,170 @@ export default new Command({
         }
     ],
     async run(i, client) {
-        const guild = client.guildsData.get(i.guild.id)
         const options = i.options
-        const metricName: string = options.getString('metric') || 'Points'
+        let guild = client.guildsData.get(i.guild.id)
+        const global = options.getBoolean('global')
+        const metric: string = options.getString('metric') || 'Points'
 
-        // convert metric to the name in the database
-        const dbAttrName = (() => {
-            switch (metricName) {
-                case 'Points':
-                    return 'pointsTotal'
-                case 'Buildings':
-                    return 'buildingCount'
-                case 'Roads':
-                    return 'roadKMs'
-                case 'Land':
-                    return 'sqm'
-            }
-        })()
-
-        // get units of the selected metric
-        const units = (() => {
-            switch (metricName) {
-                case 'Points':
-                    return 'points'
-                case 'Buildings':
-                    return 'buildings'
-                case 'Roads':
-                    return 'km'
-                case 'Land':
-                    return 'm²'
-            }
-        })()
-
-        const pageLength = 10
-        const pagesToPrefetch = 1 // Number of pages to prefetch after the current page
-        let page = 1
-        let users: LeaderboardUser[] // Users to be put on the leaderboard, sorted in descending order
         let guildName: string
-        let userInfos: Promise<Discord.User>[] = [] // User attributes fetched from Discord. Indices correspond with 'users' array
+        let queryFilter = []
 
-        if (options.getBoolean('global')) {
-            guildName = 'all build teams'
-            // get array of all users and their global points, sort descending
-            users = await Builder.aggregate([
-                {
-                    $match: {
-                        [dbAttrName]: { $exists: true, $nin: [null, 0] }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$id',
-                        count: { $sum: `$${dbAttrName}` }
-                    }
-                },
-                { $sort: { count: -1 } }
-            ])
+        if (global) {
+            guildName = 'All Build Teams'
+            guild = client.guildsData.get('global')
         } else {
-            guildName = guild.name
-            // or get array of all users in this guild and their points, sort descending
-            users = await Builder.aggregate([
-                {
-                    $match: {
-                        guildId: guild.id,
-                        [dbAttrName]: { $exists: true, $nin: [null, 0] }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$id',
-                        count: { $sum: `$${dbAttrName}` }
-                    }
-                },
-                { $sort: { count: -1 } }
-            ])
+            // for non-global, just find within this guild
+            guildName = i.guild.name
+
+            queryFilter = [{
+                $match: { guildId: i.guild.id }
+            }]
         }
 
-        const maxPage = Math.ceil(users.length / pageLength)
+        let onePoints = { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: { $toLong: '$size' }, else: 0 } }
+        let manyPoints = {
+            $cond: {
+                if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                    $sum: [
+                        { $multiply: [{ $toLong: '$smallAmt' }, 2] },
+                        { $multiply: [{ $toLong: '$mediumAmt' }, 5] },
+                        { $multiply: [{ $toLong: '$largeAmt' }, 10] }
+                    ]
+                }, else: 0
+            }
+        }
+        let landPoints = { $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: { $toDouble: '$pointsTotal' }, else: 0 } }
+        let roadPoints = { $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: { $multiply: [{ $toLong: '$roadType' }, { $toLong: '$roadKMs' }] }, else: 0 } }
 
-        // make buttons
-        const previousButton = new MessageButton()
-            .setCustomId('previous')
-            .setLabel('Previous page')
-            .setStyle('PRIMARY')
+        let pointsTotal = {
+            $sum: [{
+                $divide: [{
+                    $multiply: [
+                        { $sum: [onePoints, manyPoints, roadPoints] },
+                        { $toLong: '$complexity' },
+                        { $toLong: '$quality' },
+                        { $toLong: '$bonus' }
+                    ]
+                }, { $toLong: '$collaborators' }]
+            }, landPoints]
+        }
 
-        const nextButton = new MessageButton()
-            .setCustomId('next')
-            .setLabel('Next page')
-            .setStyle('PRIMARY')
 
-        // create the embed for a page of leaderboard (the first page is page=1)
-        async function makeEmbed(page: number) {
-            const pageStart = page * pageLength - pageLength // the first index on this page
-            // fetch all user information for this page and prefetch for the next 'pagesToPrefetch' pages
-            for (let i = pageStart; i < pageStart + (1 + pagesToPrefetch) * pageLength; i++) {
-                // only fetch if that user exists and that user's info has not already been fetched
-                if (users[i] !== undefined && userInfos[i] === undefined) {
-                    userInfos[i] = client.users.fetch(users[i]._id)
+        let query = await Submission.aggregate([
+            ...queryFilter,
+            {
+                $group: {
+                    _id: '$userId',
+                    points: { $sum: pointsTotal },
+                    buildings: {
+                        $sum: {
+                            $sum: [
+                                { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: 1, else: 0 } },
+                                {
+                                    $cond: {
+                                        if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                                            $sum: ['$smallAmt', '$mediumAmt', '$largeAmt']
+                                        }, else: 0
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    roadsKMs: {
+                        $sum: {
+                            $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: '$roadKMs', else: 0 }
+                        }
+                    },
+                    landMetersSquare: {
+                        $sum: {
+                            $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: '$sqm', else: 0 }
+                        }
+                    }
+
                 }
             }
-            // wait for this page's users so we can display their username/#
-            // the length of pageUserInfos may be less than 'pageLength' iff this is the last page
-            const pageUserInfos = await Promise.all(
-                userInfos.slice(pageStart, pageStart + pageLength)
-            )
+        ])
 
-            let content = ''
-            // display each user and their count
-            for (let i = pageStart; i < pageStart + pageUserInfos.length; i++) {
-                const indxInPage = i - pageStart // This user's index in the page
-                const value = (() => {
-                    if (/[\.]/.test(users[i].count)) {
-                        // if the value is a float
-                        return parseFloat(users[i].count).toFixed(1)
-                    } else {
-                        // if the value is an int
-                        return users[i].count
-                    }
-                })()
+        console.log(query)
 
-                // add the next line to this page's msg content
-                content += `**${i + 1}.** \`${pageUserInfos[indxInPage].username}#${
-                    pageUserInfos[indxInPage].discriminator
-                }\`: ${value} ${units}\n\n`
+        let leaderboard = []
+
+        for (const [key, value] of Object.entries(query)) {
+            let res = {
+                Points: () => {
+                    return value['points']
+                },
+                Buildings: () => {
+                    return value['buildings']
+                },
+                Roads: () => {
+                    return value['roadsKMs']
+                },
+                Land: () => {
+                    return value['landMetersSquare']
+                }
             }
 
+            leaderboard.push({ id: value['_id'], val: res[metric]().toFixed(2).replace(/[.,]00$/, '') })
+        }
+
+        leaderboard.sort((a, b) => {
+            return b['val'] - a['val']
+        })
+
+        leaderboard = leaderboard.slice(0, MAX_SIZE)
+
+
+        const pluralsMap = {
+            Points: 'points',
+            Buildings: 'buildings',
+            Roads: 'km',
+            Land: 'm²'
+        }
+
+        let pages = []
+
+        if (leaderboard.length == 0) {
+            pages = [
+                new Discord.MessageEmbed()
+                .setTitle(`Doesn't look like any builds have been accepted here!`)
+                .setDescription('')
+            ]
+        }
+
+        for (let i = 0; i < Math.ceil(leaderboard.length / ITEMS_PER_PAGE); i++) {
+            const startIndex = i * ITEMS_PER_PAGE
+            const endIndex = startIndex + ITEMS_PER_PAGE
             const embed = new Discord.MessageEmbed()
-                .setTitle(
-                    `${metricName} leaderboard for ${guild.emoji} ${guildName} ${guild.emoji}!`
-                )
-                .setDescription(content)
+            .setTitle(`${metric.charAt(0).toUpperCase() + metric.slice(1)} Leaderboard for ${guild.emoji} ${guildName} ${guild.emoji}`)
+            .setDescription(leaderboard.map((element, index) => {
+                return `**${index + 1}.** <@${element.id}>: ${element.val} ${pluralsMap[metric]}`
+            }).slice(startIndex, endIndex).join('\n\n'))
 
-            return embed
+            pages.push(embed)
         }
 
-        // reply with page 1 and next button
-        // if there's only 1 leaderboard page, no buttons
-        // use less than one, because an empty leaderboard has no pages
-        if (maxPage <= 1) {
-            await i.reply({
-                embeds: [await makeEmbed(page)]
-            })
-        } else {
-            // otherwise, add a next button
-            await i.reply({
-                embeds: [await makeEmbed(1)],
-                components: [new MessageActionRow().addComponents(nextButton)]
-            })
-        }
-
-        const reply = await i.fetchReply()
-        const replyMsg = await i.channel.messages.fetch(reply.id)
-
-        const filter = (button) => button.customId == 'previous' || button.customId == 'next'
-
-        // listen for button pressed
-        // noinspection GrazieInspection
-        function buttonListener() {
-            replyMsg
-                .awaitMessageComponent({
-                    filter,
-                    time: 12 * 60 * 60 * 1000
-                })
-                // when button is pressed, update the embed and page value accordingly, then start another listener
-                .then(async (i) => {
-                    if (i.customId == 'previous') {
-                        page -= 1
-                        // no previous button allowed if it's the 1st page (or negative page, error or empty leaderboard)
-                        if (page <= 1) {
-                            await i.update({
-                                embeds: [await makeEmbed(page)],
-                                components: [new MessageActionRow().addComponents(nextButton)]
-                            })
-                        } else {
-                            await i.update({
-                                embeds: [await makeEmbed(page)],
-                                components: [
-                                    new MessageActionRow().addComponents(
-                                        previousButton,
-                                        nextButton
-                                    )
-                                ]
-                            })
-                        }
-                    } else if (i.customId == 'next') {
-                        page += 1
-                        // no next button allowed if it's the last page
-                        if (page == maxPage) {
-                            await i.update({
-                                embeds: [await makeEmbed(page)],
-                                components: [
-                                    new MessageActionRow().addComponents(previousButton)
-                                ]
-                            })
-                        } else {
-                            await i.update({
-                                embeds: [await makeEmbed(page)],
-                                components: [
-                                    new MessageActionRow().addComponents(
-                                        previousButton,
-                                        nextButton
-                                    )
-                                ]
-                            })
-                        }
-                    }
-                    buttonListener()
-                })
-                .catch((err) => {
-                    return err
-                })
-        }
-        buttonListener()
+        await pagination({
+            embeds: pages,
+            author: i.user,
+            interaction: i,
+            ephemeral: true,
+            time: 60 * 1000,
+            disableButtons: true,
+            fastSkip: false,
+            pageTravel: false,
+            buttons: [
+                {
+                    value: TypesButtons.previous,
+                    label: 'Previous',
+                    style: 'PRIMARY'
+                },
+                {
+                    value: TypesButtons.next,
+                    label: 'Next',
+                    style: 'PRIMARY'
+                }
+            ]
+        })
     }
 })
