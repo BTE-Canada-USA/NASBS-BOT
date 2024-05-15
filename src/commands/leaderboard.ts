@@ -123,8 +123,6 @@ export default new Command({
             }
         ])
 
-        console.log(query)
-
         let leaderboard = []
 
         for (const [key, value] of Object.entries(query)) {
