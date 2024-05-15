@@ -68,9 +68,7 @@ export default new Command({
         // leaderboard of reviewers by metric
         if (i.options.getSubcommand() == 'leaderboard') {
             const metric: string = options.getString('metric')
-
-            let page = 1
-            let reviewers
+            
             let guildName: string
 
             let queryFilter = []
