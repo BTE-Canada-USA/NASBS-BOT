@@ -129,10 +129,10 @@ export default new Command({
                 new Discord.MessageEmbed()
                 .setTitle(`POINTS!`)
                 .setDescription(
-                    `\`${user.username}\` has :tada: ***${data.points}***  :tada: points in ${guild.emoji} ${guildName} ${guild.emoji}!!\n\n
+                    `<@${user.id}> has :tada: ***${data.points.toFixed(2).replace(/[.,]00$/, '')}***  :tada: points in ${guild.emoji} ${guildName} ${guild.emoji}!!\n\n
                     Number of buildings: :house: ***${data.buildings}***  :house: !!!\n
-                    Sqm of land: :corn: ***${data.landMetersSquare}***  :corn:\n
-                    Kilometers of roads: :motorway: ***${data.roadsKMs}***  :motorway:`
+                    Sqm of land: :corn: ***${data.landMetersSquare.toFixed(2).replace(/[.,]00$/, '')}***  :corn:\n
+                    Kilometers of roads: :motorway: ***${data.roadsKMs.toFixed(2).replace(/[.,]00$/, '')}***  :motorway:`
                 )
             ]
         })
