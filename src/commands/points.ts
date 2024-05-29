@@ -1,5 +1,4 @@
 import Command from '../struct/Command.js'
-import { BuilderInterface } from '../struct/Builder.js'
 import Discord from 'discord.js'
 import Submission from '../struct/Submission.js'
 
@@ -26,9 +25,6 @@ export default new Command({
         const user = options.getUser('user') || i.user
         const global = options.getBoolean('global')
         const userId = user.id
-        let userData: BuilderInterface
-        let usersAbove: number
-        let usersAboveQuery: { count: number }[]
 
         let guildName: string
         let queryFilter = []
