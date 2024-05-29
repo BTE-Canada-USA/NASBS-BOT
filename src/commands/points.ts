@@ -1,6 +1,6 @@
 import Command from '../struct/Command.js'
-import Builder, { BuilderInterface } from '../struct/Builder.js'
 import Discord from 'discord.js'
+import Submission from '../struct/Submission.js'
 
 export default new Command({
     name: 'points',
@@ -20,117 +20,120 @@ export default new Command({
         }
     ],
     async run(i, client) {
-        const guild = client.guildsData.get(i.guild.id)
+        let guild = client.guildsData.get(i.guild.id)
         const options = i.options
         const user = options.getUser('user') || i.user
         const global = options.getBoolean('global')
         const userId = user.id
+
         let guildName: string
-        let userData: BuilderInterface
-        let usersAbove: number
-        let usersAboveQuery: { count: number }[]
+        let queryFilter = []
 
         if (global) {
-            // sum user's stats from all guilds
-            guildName = 'all build teams'
-            userData = await Builder.aggregate([
-                { $match: { id: userId } },
-                {
-                    $group: {
-                        _id: '$id',
-                        pointsTotal: { $sum: '$pointsTotal' },
-                        buildingCount: { $sum: '$buildingCount' },
-                        roadKMs: { $sum: '$roadKMs' },
-                        sqm: { $sum: '$sqm' }
-                    }
+            guildName = 'All Build Teams'
+            guild = client.guildsData.get('global')
+            queryFilter = [{
+                $match: {
+                    userId: userId
                 }
-            ])[0]
-
-            // return if user does not exist in db
-            if (!userData) {
-                return i.reply({
-                    embeds: [
-                        new Discord.MessageEmbed().setDescription(
-                            `\`${user.username}#${user.discriminator}\` has not gained any points in any teams yet :frowning2: <:sad_cat:873457028981481473>`
-                        )
-                    ]
-                })
-            }
-
-            // get global leaderboard position by getting global points of all users, then counting how many users have more global points
-            usersAboveQuery = await Builder.aggregate([
-                {
-                    $group: {
-                        _id: '$id',
-                        pointsTotal: { $sum: '$pointsTotal' }
-                    }
-                },
-                {
-                    $match: { pointsTotal: { $gt: userData.pointsTotal } }
-                },
-                { $count: 'count' }
-            ])
+            }]
         } else {
-            guildName = guild.name
-            userData = await Builder.findOne({
-                id: userId,
-                guildId: guild.id
-            }).lean()
+            // for non-global, just find within this guild
+            guildName = i.guild.name
 
-            // return if user does not exist in db
-            if (!userData) {
-                return i.reply({
-                    embeds: [
-                        new Discord.MessageEmbed().setDescription(
-                            `\`${user.username}#${user.discriminator}\` has not gained any points in ${guild.emoji} ${guildName} ${guild.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
-                        )
-                    ]
-                })
-            }
-
-            // get guild leaderboard position by getting points of all users in guild, then counting how many users have more points
-            usersAboveQuery = await Builder.aggregate([
-                {
-                    $match: { guildId: guild.id }
-                },
-                {
-                    $group: {
-                        _id: '$id',
-                        pointsTotal: { $sum: '$pointsTotal' }
-                    }
-                },
-                {
-                    $match: { pointsTotal: { $gt: userData.pointsTotal } }
-                },
-                { $count: 'count' }
-            ])
+            queryFilter = [{
+                $match: {
+                    guildId: i.guild.id,
+                    userId: user.id
+                }
+            }]
         }
 
-        if (usersAboveQuery.length == 0) {
-            usersAbove = 0
-        } else {
-            usersAbove = usersAboveQuery[0].count
+        let onePoints = { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: { $toLong: '$size' }, else: 0 } }
+        let manyPoints = {
+            $cond: {
+                if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                    $sum: [
+                        { $multiply: [{ $toLong: '$smallAmt' }, 2] },
+                        { $multiply: [{ $toLong: '$mediumAmt' }, 5] },
+                        { $multiply: [{ $toLong: '$largeAmt' }, 10] }
+                    ]
+                }, else: 0
+            }
         }
+        let landPoints = { $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: { $toDouble: '$pointsTotal' }, else: 0 } }
+        let roadPoints = { $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: { $multiply: [{ $toLong: '$roadType' }, { $toLong: '$roadKMs' }] }, else: 0 } }
+
+        let pointsTotal = {
+            $sum: [{
+                $divide: [{
+                    $multiply: [
+                        { $sum: [onePoints, manyPoints, roadPoints] },
+                        { $toLong: '$complexity' },
+                        { $toLong: '$quality' },
+                        { $toLong: '$bonus' }
+                    ]
+                }, { $toLong: '$collaborators' }]
+            }, landPoints]
+        }
+
+        let query = await Submission.aggregate([
+            ...queryFilter,
+            {
+                $group: {
+                    _id: '$userId',
+                    points: { $sum: pointsTotal },
+                    buildings: {
+                        $sum: {
+                            $sum: [
+                                { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: 1, else: 0 } },
+                                {
+                                    $cond: {
+                                        if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                                            $sum: ['$smallAmt', '$mediumAmt', '$largeAmt']
+                                        }, else: 0
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    roadsKMs: {
+                        $sum: {
+                            $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: '$roadKMs', else: 0 }
+                        }
+                    },
+                    landMetersSquare: {
+                        $sum: {
+                            $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: '$sqm', else: 0 }
+                        }
+                    }
+
+                }
+            }
+        ])
+
+        if (query.length == 0) {
+            return i.reply({
+                embeds: [
+                    new Discord.MessageEmbed().setDescription(
+                        `\`${user.username}\` has no completed builds!`
+                    )
+                ]
+            })
+        }
+
+        let data = query[0]
 
         await i.reply({
             embeds: [
                 new Discord.MessageEmbed()
-                    .setTitle(`POINTS!`)
-                    .setDescription(
-                        `\`${user.username}#${user.discriminator}\` has :tada: ***${
-                            userData.pointsTotal
-                        }***  :tada: points in ${guild.emoji} ${guildName} ${
-                            guild.emoji
-                        }!!\n\nNumber of buildings: :house: ***${
-                            userData.buildingCount || 0
-                        }***  :house: !!!\nSqm of land: :corn: ***${
-                            userData.sqm || 0
-                        }***  :corn:\nKilometers of roads: :motorway: ***${
-                            userData.roadKMs || 0
-                        }***  :motorway:\n\nLeaderboard position in ${
-                            guild.emoji
-                        } ${guildName} ${guild.emoji}: **#${usersAbove + 1}**`
-                    )
+                .setTitle(`POINTS!`)
+                .setDescription(
+                    `\`${user.username}\` has :tada: ***${data.points}***  :tada: points in ${guild.emoji} ${guildName} ${guild.emoji}!!\n\n
+                    Number of buildings: :house: ***${data.buildings}***  :house: !!!\n
+                    Sqm of land: :corn: ***${data.landMetersSquare}***  :corn:\n
+                    Kilometers of roads: :motorway: ***${data.roadsKMs}***  :motorway:`
+                )
             ]
         })
     }
