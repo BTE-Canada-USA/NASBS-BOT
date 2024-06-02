@@ -136,18 +136,5 @@ export default new Command({
                 )
             ]
         })
-
-        let query_ = await Submission.aggregate([
-            ...queryFilter,
-            {
-                $project: {
-                    _id: '$userId',
-                    pointsTotal: true,
-                    calculatedPoints: pointsTotal
-                }
-            }
-        ])
-
-        console.log(query_)
     }
 })
