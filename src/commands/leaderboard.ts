@@ -72,16 +72,16 @@ export default new Command({
             }
         }
         let landPoints = { $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: { $toDouble: '$pointsTotal' }, else: 0 } }
-        let roadPoints = { $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: { $multiply: [{ $toLong: '$roadType' }, { $toLong: '$roadKMs' }] }, else: 0 } }
+        let roadPoints = { $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: { $multiply: [{ $toLong: '$roadType' }, { $toDouble: '$roadKMs' }] }, else: 0 } }
 
         let pointsTotal = {
             $sum: [{
                 $divide: [{
                     $multiply: [
                         { $sum: [onePoints, manyPoints, roadPoints] },
-                        { $toLong: '$complexity' },
-                        { $toLong: '$quality' },
-                        { $toLong: '$bonus' }
+                        { $toDouble: '$complexity' },
+                        { $toDouble: '$quality' },
+                        { $toDouble: '$bonus' }
                     ]
                 }, { $toLong: '$collaborators' }]
             }, landPoints]
