@@ -82,16 +82,51 @@ export default new Command({
                             break
                     }
                     // write the summary
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n*__Points breakdown:__*\nBuilding type: ${sizeName}\nQuality multiplier: x${submissionData.quality}\nComplexity multiplier: x${submissionData.complexity}\nBonuses: x${submissionData.bonus}\nCollaborators: ${submissionData.collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${submissionData.feedback}\``
+                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n
+                    Builder: <@${submissionData.userId}>\n
+                    *__Points breakdown:__*\nBuilding type: ${sizeName}\n
+                    Quality multiplier: x${submissionData.quality}\n
+                    Complexity multiplier: x${submissionData.complexity}\n
+                    Bonuses: x${submissionData.bonus}\n
+                    Collaborators: ${submissionData.collaborators}\n
+                    [Link](${submissionMsg.url})\n\n
+                    __Feedback:__ \`${submissionData.feedback}\``
                     break
                 case 'MANY':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n*__Points breakdown:__*\nNumber of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}\nQuality multiplier: x${submissionData.quality}\nComplexity multiplier: x${submissionData.complexity}\nBonuses: x${submissionData.bonus}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${submissionData.feedback}\``
+                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n
+                    Builder: <@${submissionData.userId}>\n
+                    *__Points breakdown:__*\n
+                    Number of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}\n
+                    Quality multiplier: x${submissionData.quality}\n
+                    Complexity multiplier: x${submissionData.complexity}\n
+                    Bonuses: x${submissionData.bonus}\n
+                    [Link](${submissionMsg.url})\n\n
+                    __Feedback:__ \`${submissionData.feedback}\``
                     break
                 case 'LAND':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n*__Points breakdown:__*\nLand area: ${submissionData.sqm} sqm\nQuality multiplier: x${submissionData.quality}\nComplexity multiplier: x${submissionData.complexity}\nBonuses: x${submissionData.bonus}\nCollaborators: ${submissionData.collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${submissionData.feedback}\``
+                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n
+                    Builder: <@${submissionData.userId}>\n
+                    *__Points breakdown:__*\n
+                    Land area: ${submissionData.sqm} sqm\n
+                    Quality multiplier: x${submissionData.quality}\n
+                    Complexity multiplier: x${submissionData.complexity}\n
+                    Bonuses: x${submissionData.bonus}\n
+                    Collaborators: ${submissionData.collaborators}\n
+                    [Link](${submissionMsg.url})\n\n
+                    __Feedback:__ \`${submissionData.feedback}\``
                     break
                 case 'ROAD':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n*__Points breakdown:__*\nRoad type: ${submissionData.roadType}\nQuality multiplier: x${submissionData.quality}\nComplexity multiplier: x${submissionData.complexity}\nDistance: ${submissionData.roadKMs} km\nBonuses: x${submissionData.bonus}\nCollaborators: ${submissionData.collaborators}\n[Link](${submissionMsg.url})\n\nFeedback: \`${submissionData.feedback}\``
+                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n\n
+                    Builder: <@${submissionData.userId}>\n
+                    *__Points breakdown:__*\n
+                    Road type: ${submissionData.roadType}\n
+                    Quality multiplier: x${submissionData.quality}\n
+                    Complexity multiplier: x${submissionData.complexity}\n
+                    Distance: ${submissionData.roadKMs} km\n
+                    Bonuses: x${submissionData.bonus}\n
+                    Collaborators: ${submissionData.collaborators}\n
+                    [Link](${submissionMsg.url})\n\n
+                    Feedback: \`${submissionData.feedback}\``
                     break
             }
         }
