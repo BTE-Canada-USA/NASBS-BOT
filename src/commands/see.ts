@@ -70,7 +70,7 @@ export default new Command({
 
         summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
         Builder: <@${submissionData.userId}>
-        *__Points breakdown:__*`
+        *__Points breakdown:__*\n`
 
         // otherwise, it's a reviewed submission
         // write the summary depending on which type of submission it was
