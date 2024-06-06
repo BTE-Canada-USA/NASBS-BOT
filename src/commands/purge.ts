@@ -30,6 +30,9 @@ export default new Command({
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
             submissionLink = `[Link](${submissionMsg.url})`
+
+            await i.reply('One moment...')
+
         } catch (e) {
             await i.reply(
                 `'${submissionId}' is not a message ID from the build submit channel on this server... checking anyways`
@@ -42,23 +45,21 @@ export default new Command({
         if (!originalSubmission) {
             const rejectedSubmission = await Rejection.findById(submissionId)
             if (rejectedSubmission) {
-                return i.reply('that one has already been rejected <:bonk:720758421514878998>!')
+                return i.followUp('that one has already been rejected <:bonk:720758421514878998>!')
             }
 
-            return i.reply('Could not find a submission with that ID')
+            return i.followUp('Could not find a submission with that ID')
         }
 
         // Gate to ensure submission belongs to the server that is trying to remove it
         if (originalSubmission.guildId != i.guild.id) {
-            return i.reply('This submission belongs to another server and has not been merged. You do not have permission to purge it.')
+            return i.followUp('This submission belongs to another server and has not been merged. You do not have permission to purge it.')
         }
-
-        await i.reply('doing stuff...')
 
         // Delete submission from the database
         await originalSubmission.deleteOne().catch((err) => {
             console.log(err)
-            return i.followUp(`ERROR HAPPENED: ${err}\n Please try again`)
+            return i.followUp(`ERROR HAPPENED: ${err}`)
         })
 
         // Update user's points
@@ -104,24 +105,27 @@ export default new Command({
         const dmsEnabled = await areDmsEnabled(originalSubmission.userId)
 
         // Send a DM to the user if user wants dms
-        if (dmsEnabled) {
-            const builder = submissionMsg.author
-            const dm = await builder.createDM()
+        try {
+            if (dmsEnabled) {
+                const builder = submissionMsg.author
+                const dm = await builder.createDM()
 
-            const embed = new Discord.MessageEmbed()
-            .setTitle(`Your recent build submission has been removed.`)
-            .setDescription(
-                `__${submissionLink}__\n\n`
-            )
-
-            await dm.send({ embeds: [embed] }).catch((err) => {
-                return i.followUp(
-                    `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
+                const embed = new Discord.MessageEmbed()
+                .setTitle(`Your recent build submission has been removed.`)
+                .setDescription(
+                    `__${submissionLink}__\n\n`
                 )
-            })
+
+                await dm.send({ embeds: [embed] }).catch((err) => {
+                    return i.followUp(
+                        `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
+                    )
+                })
+            }
+        } catch (e) {
         }
-        i.followUp(
-            `PURGED SUBMISSION ${submissionLink}`
-        )
+
+
+        await i.followUp(`PURGED SUBMISSION ${submissionLink}`)
     }
 })
