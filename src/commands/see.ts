@@ -24,13 +24,18 @@ export default new Command({
         const submissionId = options.getString('id')
         let submissionMsg: Message
         let summary: string
+        let submissionLink = '[Link could not be generated]'
 
         // make sure user knows how to use msg ids
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
+            submissionLink = `[Link](${submissionMsg.url})`
+            await i.reply(
+                `One moment...`
+            )
         } catch (e) {
-            return i.reply(
-                `'${submissionId}' is not a valid message ID from the build submit channel!`
+            await i.reply(
+                `'${submissionId}' is not a message ID from the build submit channel on this server... checking anyways`
             )
         }
 
@@ -44,13 +49,14 @@ export default new Command({
 
         // return if submission is unreviewed (doesn't exist in rejections or submissions db)
         if (!submissionData && !isRejected) {
-            return i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `this submission has not been reviewed yet!`
-                    )
-                ]
-            })
+            return i.followUp(`this submission has not been reviewed yet!`)
+        }
+
+        let sizeName = {
+            2: 'small',
+            5: 'medium',
+            10: 'large',
+            20: 'monumental'
         }
 
         // if its rejection, get rejection from db
@@ -59,80 +65,41 @@ export default new Command({
                 _id: submissionId
             }).lean()
 
-            summary = `that submission was rejected : (\n\nFeedback: \`${rejectionData.feedback}\``
-        } else {
-            // otherwise, it's a reviewed submission
-            // write the summary depending on which type of submission it was
-            switch (submissionData.submissionType) {
-                case 'ONE':
-                    // if type ONE, change number size into a human-readable size name
-                    let sizeName: string
-                    switch (submissionData.size) {
-                        case 2:
-                            sizeName = 'small'
-                            break
-                        case 5:
-                            sizeName = 'medium'
-                            break
-                        case 10:
-                            sizeName = 'large'
-                            break
-                        case 20:
-                            sizeName = 'monumental'
-                            break
-                    }
-                    // write the summary
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
-                    Builder: <@${submissionData.userId}>
-                    *__Points breakdown:__*\nBuilding type: ${sizeName}
-                    Quality multiplier: x${submissionData.quality}
-                    Complexity multiplier: x${submissionData.complexity}
-                    Bonuses: x${submissionData.bonus}
-                    Collaborators: ${submissionData.collaborators}
-                    [Link](${submissionMsg.url})\n
-                    __Feedback:__ \`${submissionData.feedback}\``
-                    break
-                case 'MANY':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
-                    Builder: <@${submissionData.userId}>
-                    *__Points breakdown:__*
-                    Number of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}
-                    Quality multiplier: x${submissionData.quality}
-                    Complexity multiplier: x${submissionData.complexity}
-                    Bonuses: x${submissionData.bonus}
-                    [Link](${submissionMsg.url})\n
-                    __Feedback:__ \`${submissionData.feedback}\``
-                    break
-                case 'LAND':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
-                    Builder: <@${submissionData.userId}>
-                    *__Points breakdown:__*
-                    Land area: ${submissionData.sqm} sqm
-                    Quality multiplier: x${submissionData.quality}
-                    Complexity multiplier: x${submissionData.complexity}
-                    Bonuses: x${submissionData.bonus}
-                    Collaborators: ${submissionData.collaborators}
-                    [Link](${submissionMsg.url})\n
-                    __Feedback:__ \`${submissionData.feedback}\``
-                    break
-                case 'ROAD':
-                    summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
-                    Builder: <@${submissionData.userId}>
-                    *__Points breakdown:__*
-                    Road type: ${submissionData.roadType}
-                    Quality multiplier: x${submissionData.quality}
-                    Complexity multiplier: x${submissionData.complexity}
-                    Distance: ${submissionData.roadKMs} km
-                    Bonuses: x${submissionData.bonus}
-                    Collaborators: ${submissionData.collaborators}
-                    [Link](${submissionMsg.url})\n
-                    Feedback: \`${submissionData.feedback}\``
-                    break
-            }
+            return i.followUp(`That submission was rejected : (\n\nFeedback: \`${rejectionData.feedback}\``)
         }
 
+        summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
+        Builder: <@${submissionData.userId}>
+        *__Points breakdown:__*`
+
+        // otherwise, it's a reviewed submission
+        // write the summary depending on which type of submission it was
+        switch (submissionData.submissionType) {
+            case 'ONE':
+                // write the summary
+                summary += `Building type: ${sizeName}`
+                break
+            case 'MANY':
+                summary += `Number of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}`
+                break
+            case 'LAND':
+                summary += `Land area: ${submissionData.sqm} sqm`
+                break
+            case 'ROAD':
+                summary += `Road type: ${submissionData.roadType}
+                Distance: ${submissionData.roadKMs} km`
+                break
+        }
+
+        summary += `Quality multiplier: x${submissionData.quality}
+        Complexity multiplier: x${submissionData.complexity}
+        Bonuses: x${submissionData.bonus}
+        Collaborators: ${submissionData.collaborators}
+        [Link](${submissionMsg.url})\n
+        __Feedback:__ \`${submissionData.feedback}\``
+
         // send the review summary
-        await i.reply({
+        return i.followUp({
             embeds: [new Discord.MessageEmbed().setTitle(`POINTS!`).setDescription(summary)]
         })
     }
