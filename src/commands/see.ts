@@ -77,17 +77,17 @@ export default new Command({
         switch (submissionData.submissionType) {
             case 'ONE':
                 // write the summary
-                summary += `Building type: ${sizeName}`
+                summary += `Building type: ${sizeName[submissionData.size]}\n`
                 break
             case 'MANY':
-                summary += `Number of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}`
+                summary += `Number of buildings (S/M/L): ${submissionData.smallAmt}/${submissionData.mediumAmt}/${submissionData.largeAmt}\n`
                 break
             case 'LAND':
-                summary += `Land area: ${submissionData.sqm} sqm`
+                summary += `Land area: ${submissionData.sqm} sqm\n`
                 break
             case 'ROAD':
                 summary += `Road type: ${submissionData.roadType}
-                Distance: ${submissionData.roadKMs} km`
+                Distance: ${submissionData.roadKMs} km\n`
                 break
         }
 
