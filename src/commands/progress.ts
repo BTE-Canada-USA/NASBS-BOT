@@ -125,7 +125,7 @@ export default new Command({
                     **Current rank:** ${guildData.rank1.name}
                     
                     **Progress towards ${guildData.rank2.name}:**
-                    ${points}/${guildData.rank2.points} points`
+                    ${points.toFixed(2).replace(/[.,]00$/, '')}/${guildData.rank2.points} points`
                 )]
             })
         }
@@ -158,8 +158,8 @@ export default new Command({
                     **Current rank:** ${guildData.rank2.name}
                     
                     **Progress towards ${guildData.rank3.name}:**
-                    ${points}**/${guildData.rank3.points}** points
-                    ${largeBuildPoints}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Good/Excellent quality Medium builds`
+                    ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank3.points}** points
+                    ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Good/Excellent quality Medium builds`
                 )]
             })
         }
@@ -173,8 +173,8 @@ export default new Command({
                     **Current rank:** ${guildData.rank3.name}
                     
                     **Progress towards ${guildData.rank4.name}:**
-                    ${points}**/${guildData.rank4.points}** points
-                    ${largeBuildPoints}**/${ARCHITECT_QUALITY_POINTS}** points from Good/Excellent quality Medium/Large builds`
+                    ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank4.points}** points
+                    ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${ARCHITECT_QUALITY_POINTS}** points from Good/Excellent quality Medium/Large builds`
                 )]
             })
         }
@@ -206,8 +206,8 @@ export default new Command({
                     **Current rank:** ${guildData.rank4.name}!
                     
                     **Progress towards ${guildData.rank5.name}:**
-                    ${points}**/${guildData.rank5.points}** points
-                    ${championBuildPoints}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Excellent quality builds of any size`
+                    ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank5.points}** points
+                    ${championBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Excellent quality builds of any size`
                 )]
             })
         }
