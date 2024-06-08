@@ -3,6 +3,10 @@ import Builder from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord from 'discord.js'
 
+const MASTER_BUILDER_QUALITY_POINTS = 200
+const ARCHITECT_QUALITY_POINTS = 500
+const CHAMPION_QUALITY_POINTS = 1000
+
 export default new Command({
     name: 'pogress',
     description: 'View your rankup progress.',
@@ -27,224 +31,199 @@ export default new Command({
             guildId: guildData.id
         }).lean()
 
-        // RETURN if user does not exist in db
-        if (!userData) {
-            return i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `\`${user.username}#${user.discriminator}\` has not gained any points in ${guildData.emoji} ${guildName} ${guildData.emoji} yet :frowning2: <:sad_cat:873457028981481473>`
-                    )
-                ]
-            })
-        }
+        await i.reply('One moment.')
 
-        // get user's next possible rank and display progress towards it (TODO: display an actual visual emoji (?) progress bar)
-        if (member.roles.cache.get(guildData.rank4.id)) {
-            // check progress towards CHAMPION
-            // get points for excellent quality all sizes
-            const level5 = await Submission.aggregate([
-                {
-                    $match: {
-                        userId: userId,
-                        guildId: guildId,
-                        quality: 2
+        let onePoints = { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: { $toLong: '$size' }, else: 0 } }
+        let largerOnePoints = {
+            $cond: {
+                if: { $eq: ['$submissionType', 'ONE'] }, then: {
+                    $cond: {
+                        if: { $gte: [{ $toLong: '$size' }, 5] },
+                        then: { $toLong: '$size' },
+                        else: 0
                     }
-                },
-                {
-                    $group: {
-                        _id: '$userId',
-                        points: {
-                            $sum: {
-                                $cond: [
-                                    // if submission type is ONE and the size is 1 or greater (all sizes), add its points to the sum
-                                    { $eq: ['$submissionType', 'ONE'] },
-                                    { $cond: [{ $gte: ['$size', 1] }, '$pointsTotal', 0] },
-                                    // else the submission type must be MANY, so calculate # of points from all sizes and add it to the sum
-                                    {
-                                        $multiply: [
-                                            {
-                                                $multiply: [
-                                                    {
-                                                        $sum: [
-                                                            { $multiply: ['$smallAmt', 2] },
-                                                            { $multiply: ['$mediumAmt', 5] },
-                                                            { $multiply: ['$largeAmt', 10] }
-                                                        ]
-                                                    },
-                                                    '$quality'
-                                                ]
-                                            },
-                                            '$complexity'
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            ])
-
-            await i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
-                            guildData.emoji
-                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
-                            guildData.rank4.name
-                        }!\n\n**Progress towards ${
-                            guildData.rank5.name
-                        }:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}**/${
-                            guildData.rank5.points
-                        }** points\n${
-                            level5[0].points
-                        }**/${400}** points from Excellent quality builds of any size`
-                    )
-                ]
-            })
-        } else if (member.roles.cache.get(guildData.rank3.id)) {
-            // check progress towards ARCHITECT
-            // get points for good/excellent quality medium or above
-            const largeOrMediums = await Submission.aggregate([
-                {
-                    $match: {
-                        userId: userId,
-                        guildId: guildId,
-                        quality: { $gte: 1.5 }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$userId',
-                        points: {
-                            $sum: {
-                                $cond: [
-                                    // if submission type is ONE and the size is 5 or greater (medium), add the submission's pointstotal to the sum
-                                    { $eq: ['$submissionType', 'ONE'] },
-                                    { $cond: [{ $gte: ['$size', 5] }, '$pointsTotal', 0] },
-                                    // else the submission type must be MANY, so calculate # of points from mediums and add it to the sum
-                                    {
-                                        $multiply: [
-                                            {
-                                                $multiply: [
-                                                    {
-                                                        $sum: [
-                                                            { $multiply: ['$mediumAmt', 5] },
-                                                            { $multiply: ['$largeAmt', 10] }
-                                                        ]
-                                                    },
-                                                    '$quality'
-                                                ]
-                                            },
-                                            '$complexity'
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            ])
-
-            await i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
-                            guildData.emoji
-                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
-                            guildData.rank3.name
-                        }\n\n**Progress towards ${
-                            guildData.rank4.name
-                        }:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}**/${
-                            guildData.rank4.points
-                        }** points\n${
-                            largeOrMediums[0].points
-                        }**/${200}** points from Good/Excellent quality Medium/Large builds`
-                    )
-                ]
-            })
-        } else if (member.roles.cache.get(guildData.rank2.id)) {
-            // check progress towards MASTER BUILDER
-            // get points for good/excellent quality medium or above
-
-            let points = 0
-
-            const largeOrMediums = await Submission.aggregate([
-                {
-                    $match: {
-                        userId: userId,
-                        guildId: guildId,
-                        quality: { $gte: 1.5 }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$userId',
-                        points: {
-                            $sum: {
-                                $cond: [
-                                    // if submission type is ONE and the size is 5 or greater (medium), add the submission's pointstotal to the sum
-                                    { $eq: ['$submissionType', 'ONE'] },
-                                    { $cond: [{ $gte: ['$size', 5] }, '$pointsTotal', 0] },
-                                    // else the submission type must be MANY, so calculate # of points from mediums and add it to the sum
-                                    {
-                                        $multiply: [
-                                            {
-                                                $multiply: [
-                                                    {
-                                                        $sum: [
-                                                            { $multiply: ['$mediumAmt', 5] },
-                                                            { $multiply: ['$largeAmt', 10] }
-                                                        ]
-                                                    },
-                                                    '$quality'
-                                                ]
-                                            },
-                                            '$complexity'
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            ])
-
-            if (largeOrMediums[0] != undefined) {
-                points = largeOrMediums[0].points
+                }, else: 0
             }
+        }
+        let manyPoints = {
+            $cond: {
+                if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                    $sum: [
+                        { $multiply: [{ $toLong: '$smallAmt' }, 2] },
+                        { $multiply: [{ $toLong: '$mediumAmt' }, 5] },
+                        { $multiply: [{ $toLong: '$largeAmt' }, 10] }
+                    ]
+                }, else: 0
+            }
+        }
+        let largerManyPoints = {
+            $cond: {
+                if: { $eq: ['$submissionType', 'MANY'] }, then: {
+                    $sum: [
+                        { $multiply: [{ $toLong: '$mediumAmt' }, 5] },
+                        { $multiply: [{ $toLong: '$largeAmt' }, 10] }
+                    ]
+                }, else: 0
+            }
+        }
+        let landPoints = { $cond: { if: { $eq: ['$submissionType', 'LAND'] }, then: { $toDouble: '$pointsTotal' }, else: 0 } }
+        let roadPoints = { $cond: { if: { $eq: ['$submissionType', 'ROAD'] }, then: { $multiply: [{ $toLong: '$roadType' }, { $toDouble: '$roadKMs' }] }, else: 0 } }
 
-            await i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `**Progress of \`${user.username}#${user.discriminator}\` in ${
-                            guildData.emoji
-                        } ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${
-                            guildData.rank2.name
-                        }\n\n**Progress towards ${guildData.rank3.name}:**\n${
-                            userData.pointsTotal
-                        }**/${guildData.rank3.points}** points\n${
-                            points
-                        }**/${100}** points from Good/Excellent quality Medium builds`
-                    )
+        let pointsTotal = {
+            $sum: [{
+                $divide: [{
+                    $multiply: [
+                        { $sum: [onePoints, manyPoints, roadPoints] },
+                        { $toDouble: '$complexity' },
+                        { $toDouble: '$quality' },
+                        { $toDouble: '$bonus' }
+                    ]
+                }, { $toLong: '$collaborators' }]
+            }, landPoints]
+        }
+
+        let largerPointsTotal = {
+            $divide: [{
+                $multiply: [
+                    { $sum: [largerOnePoints, largerManyPoints] },
+                    { $toDouble: '$complexity' },
+                    { $toDouble: '$quality' },
+                    { $toDouble: '$bonus' }
                 ]
-            })
-        } else if (member.roles.cache.get(guildData.rank1.id)) {
-            // check progress towards SENIOR BUILDER
-            await i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `**Progress of \`${user.username}#${user.discriminator}\` in ${guildData.emoji} ${guildName} ${guildData.emoji} WOOHOOO!**\n\n**Current rank:** ${guildData.rank1.name}\n\n**Progress towards ${guildData.rank2.name}:** <a:loadinggg:996842291593486346>\n${userData.pointsTotal}/${guildData.rank2.points} points`
-                    )
-                ]
-            })
-        } else {
-            await i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `\`${user.username}#${user.discriminator}\` appears to have no builder roles in ${guildData.emoji} ${guildName} ${guildData.emoji} but has some points?? Something has gone wrong :sob: SEND HELP!!`
-                    )
-                ]
+            }, { $toLong: '$collaborators' }]
+        }
+
+        let pointsQuery = await Submission.aggregate([
+            {
+                $match: {
+                    guildId: i.guild.id,
+                    userId: user.id
+                }
+            },
+            {
+                $group: {
+                    _id: '$userId',
+                    points: { $sum: pointsTotal }
+                }
+            }
+        ])
+
+        if (pointsQuery[0] === undefined) {
+            return i.editReply({
+                embeds: [new Discord.MessageEmbed().setDescription(`\<@${user.id}> has no completed builds!`)]
             })
         }
+
+        let points = pointsQuery[0].points
+
+        // they are not above a normal builder
+        if (points < guildData.rank2.points) {
+            return i.editReply({
+                embeds: [new Discord.MessageEmbed().setDescription(
+                    `**Progress of <@${user.id} in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                    
+                    **Current rank:** ${guildData.rank1.name}
+                    
+                    **Progress towards ${guildData.rank2.name}:**
+                    ${points}/${guildData.rank2.points} points`
+                )]
+            })
+        }
+
+        let largerBuildsQuery = await Submission.aggregate([
+            {
+                $match: {
+                    $and: [
+                        { $eq: ['$guildId', i.guild.id] },
+                        { $eq: ['$userId', user.id] },
+                        { $gte: ['$quality', 1.5] } // TODO: ask if this is correct
+                    ]
+                }
+            },
+            {
+                $group: {
+                    _id: '$userId',
+                    points: { $sum: largerPointsTotal }
+                }
+            }
+        ])
+
+        // sets the value to 0 if we get no results
+        let largeBuildPoints = (largerBuildsQuery[0] === undefined) ? 0 : largerBuildsQuery[0].points
+
+        // they are not above master builder
+        if (points < guildData.rank3.points && largeBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
+            return i.editReply({
+                embeds: [new Discord.MessageEmbed().setDescription(
+                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                    
+                    **Current rank:** ${guildData.rank2.name}
+                    
+                    **Progress towards ${guildData.rank3.name}:**
+                    ${points}**/${guildData.rank3.points}** points
+                    ${largeBuildPoints}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Good/Excellent quality Medium builds`
+                )]
+            })
+        }
+
+        // they are not above architect
+        if (points < guildData.rank4.points && largeBuildPoints < ARCHITECT_QUALITY_POINTS) {
+            return i.editReply({
+                embeds: [new Discord.MessageEmbed().setDescription(
+                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                        
+                    **Current rank:** ${guildData.rank3.name}
+                    
+                    **Progress towards ${guildData.rank4.name}:**
+                    ${points}**/${guildData.rank4.points}** points
+                    ${largeBuildPoints}**/${ARCHITECT_QUALITY_POINTS}** points from Good/Excellent quality Medium/Large builds`
+                )]
+            })
+        }
+
+        let championBuildQuery = await Submission.aggregate([
+            {
+                $match: {
+                    $and: [
+                        { $eq: ['$guildId', i.guild.id] },
+                        { $eq: ['$userId', user.id] },
+                        { $gte: ['$quality', 2] } // TODO: ask if this is correct
+                    ]
+                }
+            },
+            {
+                $group: {
+                    _id: '$userId',
+                    points: { $sum: pointsTotal }
+                }
+            }
+        ])
+
+        // sets the value to 0 if we get no results
+        let championBuildPoints = (championBuildQuery[0] === undefined) ? 0 : championBuildQuery[0].points
+
+        if (points < guildData.rank5.points && championBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
+            return i.editReply({
+                embeds: [new Discord.MessageEmbed().setDescription(
+                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                    
+                    **Current rank:** ${guildData.rank4.name}!
+                    
+                    **Progress towards ${guildData.rank5.name}:**
+                    ${points}**/${guildData.rank5.points}** points
+                    ${championBuildPoints}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Excellent quality builds of any size`
+                )]
+            })
+        }
+
+        return i.editReply({
+            embeds: [new Discord.MessageEmbed().setDescription(
+                `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                    
+                **Current rank:** ${guildData.rank5.name}!
+                
+                You are at the top. Congratulations!`
+            )]
+        })
     }
 })
