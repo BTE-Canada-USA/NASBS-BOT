@@ -133,11 +133,9 @@ export default new Command({
         let largerBuildsQuery = await Submission.aggregate([
             {
                 $match: {
-                    $and: [
-                        { $eq: ['$guildId', i.guild.id] },
-                        { $eq: ['$userId', user.id] },
-                        { $gte: ['$quality', 1.5] } // TODO: ask if this is correct
-                    ]
+                    guildId: i.guild.id,
+                    userId: user.id,
+                    quality: { $qte: 1.5 } // TODO: ask if this is correct
                 }
             },
             {
@@ -184,11 +182,9 @@ export default new Command({
         let championBuildQuery = await Submission.aggregate([
             {
                 $match: {
-                    $and: [
-                        { $eq: ['$guildId', i.guild.id] },
-                        { $eq: ['$userId', user.id] },
-                        { $gte: ['$quality', 2] } // TODO: ask if this is correct
-                    ]
+                    guildId: i.guild.id,
+                    userId: user.id,
+                    quality: { $qte: 2 } // TODO: ask if this is correct
                 }
             },
             {
