@@ -120,7 +120,7 @@ export default new Command({
         if (points < guildData.rank2.points) {
             return i.editReply({
                 embeds: [new Discord.MessageEmbed().setDescription(
-                    `**Progress of <@${user.id} in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
                     
                     **Current rank:** ${guildData.rank1.name}
                     
