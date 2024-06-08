@@ -135,7 +135,7 @@ export default new Command({
                 $match: {
                     guildId: i.guild.id,
                     userId: user.id,
-                    quality: { $qte: 1.5 } // TODO: ask if this is correct
+                    quality: { $gte: 1.5 } // TODO: ask if this is correct
                 }
             },
             {
@@ -184,7 +184,7 @@ export default new Command({
                 $match: {
                     guildId: i.guild.id,
                     userId: user.id,
-                    quality: { $qte: 2 } // TODO: ask if this is correct
+                    quality: { $gte: 2 } // TODO: ask if this is correct
                 }
             },
             {
