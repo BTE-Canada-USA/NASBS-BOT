@@ -31,7 +31,7 @@ export default new Command({
             guildId: guildData.id
         }).lean()
 
-        await i.reply('One moment.')
+        await i.deferReply()
 
         let onePoints = { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: { $toLong: '$size' }, else: 0 } }
         let largerOnePoints = {
