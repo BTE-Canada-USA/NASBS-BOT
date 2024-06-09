@@ -89,7 +89,7 @@ export default new Command({
         Complexity multiplier: x${submissionData.complexity}
         Bonuses: x${submissionData.bonus}
         Collaborators: ${submissionData.collaborators}
-        [Link](${submissionLink})\n
+        ${submissionLink}
         __Feedback:__ \`${submissionData.feedback}\``
 
         // send the review summary
