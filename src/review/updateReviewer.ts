@@ -7,69 +7,81 @@ import Rejection from '../struct/Rejection.js'
 async function updateReviewerAverages(reviewer: ReviewerInterface) {
 
     let averages = await Submission.aggregate([
-        { $match: {
-            $and: [
-                {reviewer: reviewer.id},
-                {guildId: reviewer.guildId}
-            ]
-        }},
-        { $group: {
-            _id: '$reviewer',
-            quality_average: {$avg: "$quality"},
-            complexity_average: {$avg: "$complexity"}
-        }}
+        {
+            $match: {
+                $and: [
+                    { reviewer: reviewer.id },
+                    { guildId: reviewer.guildId }
+                ]
+            }
+        },
+        {
+            $group: {
+                _id: '$reviewer',
+                quality_average: { $avg: '$quality' },
+                complexity_average: { $avg: '$complexity' }
+            }
+        }
     ])
 
     let submissionFeedback = await Submission.aggregate([
-        { $match: {
-            $and: [
-                {reviewer: reviewer.id},
-                {guildId: reviewer.guildId},
-                {feedback: {$exists: true}}
-            ]
-        }}, { $group: {
-            _id: '$reviewer',
-            total: {$sum: 1},
-            feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-            feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-        }}
+        {
+            $match: {
+                $and: [
+                    { reviewer: reviewer.id },
+                    { guildId: reviewer.guildId },
+                    { feedback: { $exists: true } }
+                ]
+            }
+        }, {
+            $group: {
+                _id: '$reviewer',
+                total: { $sum: 1 },
+                feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+            }
+        }
     ])
 
     let rejectionFeedback = await Rejection.aggregate([
-        { $match: {
-            $and: [
-                {reviewer: reviewer.id},
-                {guildId: reviewer.guildId},
-                {feedback: {$exists: true}}
-            ]
-        }},
-        { $group: {
-            _id: '$reviewer',
-            total: {$sum: 1},
-            feedback_chars: {$sum: {$strLenCP: "$feedback"}},
-            feedback_words: {$sum: {$size: {$split: ["$feedback", " "]}}}
-        }}
+        {
+            $match: {
+                $and: [
+                    { reviewer: reviewer.id },
+                    { guildId: reviewer.guildId },
+                    { feedback: { $exists: true } }
+                ]
+            }
+        },
+        {
+            $group: {
+                _id: '$reviewer',
+                total: { $sum: 1 },
+                feedback_chars: { $sum: { $strLenCP: '$feedback' } },
+                feedback_words: { $sum: { $size: { $split: ['$feedback', ' '] } } }
+            }
+        }
     ])
 
-    let feedbackCharsAverage = 0;
-    let feedbackWordsAverage = 0;
-    let complexityAverage = 0;
-    let qualityAverage = 0;
+    let feedbackCharsAverage = 0
+    let feedbackWordsAverage = 0
+    let complexityAverage = 0
+    let qualityAverage = 0
 
-    if(submissionFeedback[0] != undefined && rejectionFeedback[0] != undefined) {
-        feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total);
-        feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total);
+    if (submissionFeedback[0] != undefined && rejectionFeedback[0] != undefined) {
+        feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+        feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
     }
 
-    if(averages[0] != undefined) {
-        complexityAverage = averages[0].complexity_average;
-        qualityAverage = averages[0].quality_average;
+    if (averages[0] != undefined) {
+        complexityAverage = averages[0].complexity_average
+        qualityAverage = averages[0].quality_average
     }
 
     Reviewer.updateOne({
         id: reviewer.id,
         guildId: reviewer.guildId
-    },{
+    }, {
         $set: {
             complexityAvg: complexityAverage,
             qualityAvg: qualityAverage,
@@ -101,7 +113,7 @@ async function updateReviewerForAcceptance(
     const reviewer: ReviewerInterface = await Reviewer.findOne({
         id: submissionData.reviewer,
         guildId: submissionData.guildId
-    }).lean()
+    }).exec()
 
     // if reviewer is brand-new fresh out of the oven newbie, don't need to calculate avgs
     if (!reviewer) {
@@ -123,7 +135,7 @@ async function updateReviewerForAcceptance(
                 }
             },
             { upsert: true }
-        ).lean()
+        ).exec()
     } else {
         // otherwise, reviewer already has stats so update the avgs and everything
         await updateReviewerAverages(reviewer)
@@ -141,7 +153,7 @@ async function updateReviewerForAcceptance(
                     reviewsWithFeedback: 1
                 }
             }
-        ).lean()
+        ).exec()
     }
 
     i.followUp('updated reviewer!')
@@ -169,7 +181,7 @@ async function updateReviewerForRejection(reviewer: ReviewerInterface, feedback:
                 reviewsWithFeedback: 1
             }
         }
-    ).lean()
+    ).exec()
 }
 
 /**
@@ -181,7 +193,7 @@ async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
     const reviewer: ReviewerInterface = await Reviewer.findOne({
         id: purgedSubmission.reviewer,
         guildId: purgedSubmission.guildId
-    }).lean()
+    }).exec()
 
     // update old reviewer doc
     await Reviewer.updateOne(
@@ -193,9 +205,10 @@ async function updateReviewerForPurge(purgedSubmission: SubmissionInterface) {
                 reviewsWithFeedback: -1
             }
         }
-    ).lean()
+    ).exec()
 
     // update old reviewer doc pt 2 because mongoose cant $set and $inc in 1 query
     await updateReviewerAverages(reviewer)
 }
+
 export { updateReviewerForAcceptance, updateReviewerForRejection, updateReviewerForPurge }

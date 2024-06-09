@@ -1,5 +1,4 @@
 import Command from '../struct/Command.js'
-import Builder from '../struct/Builder.js'
 import Submission from '../struct/Submission.js'
 import Discord from 'discord.js'
 
@@ -21,17 +20,8 @@ export default new Command({
     async run(i, client) {
         const guildData = client.guildsData.get(i.guild.id)
         const guildName = guildData.name
-        const guildId = i.guild.id
         const options = i.options
         const user = options.getUser('user') || i.user
-        const userId = user.id
-        const member = await i.guild.members.fetch(userId)
-        const userData = await Builder.findOne({
-            id: userId,
-            guildId: guildData.id
-        }).lean()
-
-        await i.deferReply()
 
         let onePoints = { $cond: { if: { $eq: ['$submissionType', 'ONE'] }, then: { $toLong: '$size' }, else: 0 } }
         let largerOnePoints = {

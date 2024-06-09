@@ -1,4 +1,4 @@
-import { CommandInteraction, User } from 'discord.js'
+import { CommandInteraction } from 'discord.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import Builder from '../struct/Builder.js'
 
@@ -27,16 +27,14 @@ async function addReviewToDb(
         originalSubmission &&
         originalSubmission.submissionType !== submissionData.submissionType
     ) {
-        return i.followUp(
-            "can't change submission type on edit <:bonk:720758421514878998>! Do `/purge` and then `/review` instead"
-        )
+        return i.editReply(`Can't change submission type on edit. Do \`/purge\` and then \`/review\` instead.`)
     }
 
     try {
         // insert submission doc
         await Submission.updateOne({ _id: submissionData._id }, submissionData, {
             upsert: true
-        }).lean()
+        }).exec()
 
         // update builder doc
         if (submissionData.edit && originalSubmission) {
@@ -71,10 +69,14 @@ async function addReviewToDb(
                     }
                 },
                 { upsert: true }
-            ).lean()
+            ).exec()
 
             // confirmation msg
-            return i.followUp(`EDITED Builder ${reviewMsg}`)
+            return i.editReply(
+                `The submission has been edited. 
+                
+                Builder has ${reviewMsg}`
+            )
         } else {
             // for initial reviews ------------------------------------------
             // increment user's total points and building count/sqm/roadKMs
@@ -87,16 +89,18 @@ async function addReviewToDb(
                     }
                 },
                 { upsert: true }
-            ).lean()
+            ).exec()
 
             // confirmation msg
-            await i.followUp(
-                `SUCCESS YAY!!!<:HAOYEEEEEEEEEEAH:908834717913186414>\n\nBuilder has ${reviewMsg}`
+            return i.editReply(
+                `The submission has been successfully reviewed.
+                
+                Builder has ${reviewMsg}`
             )
         }
     } catch (err) {
         console.log(err)
-        i.followUp('ERROR HAPPENED! ' + err)
+        return i.editReply('ERROR HAPPENED! ' + err)
     }
 }
 

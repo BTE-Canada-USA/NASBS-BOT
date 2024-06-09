@@ -1,7 +1,8 @@
 import Command from '../struct/Command.js'
-import Discord, { Message, TextChannel } from 'discord.js'
+import { Message, TextChannel } from 'discord.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'feedback',
@@ -32,36 +33,28 @@ export default new Command({
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
         } catch (e) {
-            return i.reply(
-                `'${submissionId}' is not a valid message ID from the build submit channel!`
-            )
+            return Responses.invalidSubmissionID(i, submissionId)
         }
 
         // check if submission has even been reviewed yet
         if (!(await checkIfRejected(submissionId)) && !(await checkIfAccepted(submissionId))) {
-            return i.reply('that submission has not been reviewed yet!')
+            return Responses.submissionHasNotBeenReviewed(i)
         }
 
         // get builder now that confirmed it's a valid situation
         const builder = await client.users.fetch(submissionMsg.author.id)
         const dm = await builder.createDM()
 
-        const embed = new Discord.MessageEmbed()
-            .setTitle(
-                `Here is some feedback for how you can improve your recent build submission!`
-            )
-            .setDescription(
-                `__[Submission link](${submissionMsg.url})__\nIf you want, use this feedback to improve your build so you can resubmit it for more points!\n\n\`${feedback}\``
-            )
-
-        dm.send({ embeds: [embed] }).catch((err) => {
-            return i.reply(
-                `${builder} has dms turned off or something went wrong while sending the dm! ${err}`
-            )
+        dm.send(Responses.createEmbed(
+            `__[Submission link](${submissionMsg.url})__
+            If you want, use this feedback to improve your build so you can resubmit it for more points!
+            
+            \`${feedback}\``,
+            `Here is some feedback for how you can improve your recent build submission!`
+        )).catch((err) => {
+            return Responses.errorDirectMessaging(i, err)
         })
 
-        return i.reply(
-            `feedback sent :weena!: \`${feedback}\`\n__[Submission link](<${submissionMsg.url}>)__`
-        )
+        return Responses.feedbackSent(i, feedback, submissionMsg.url)
     }
 })

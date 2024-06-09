@@ -1,4 +1,4 @@
-import Rejection from '../struct/Rejection.js'
+import Rejection, { RejectionInterface } from '../struct/Rejection.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
 
 /**
@@ -7,9 +7,7 @@ import Submission, { SubmissionInterface } from '../struct/Submission.js'
  * @returns true if the submission is in the submissions db
  */
 async function checkIfAccepted(submissionId: string) {
-    const submission = await Submission.findOne({
-        _id: submissionId
-    }).lean()
+    const submission: SubmissionInterface = await Submission.findById(submissionId).exec()
 
     if (submission) {
         return true
@@ -22,9 +20,7 @@ async function checkIfAccepted(submissionId: string) {
  * @returns true if the submission is in the rejections db
  */
 async function checkIfRejected(submissionId: string) {
-    const submission: SubmissionInterface = await Rejection.findOne({
-        _id: submissionId
-    }).lean()
+    const submission: RejectionInterface = await Rejection.findById(submissionId).exec()
 
     if (submission) {
         return true

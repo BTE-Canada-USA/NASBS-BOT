@@ -1,6 +1,6 @@
 import Command from '../struct/Command.js'
-import Discord from 'discord.js'
 import Submission from '../struct/Submission.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'points',
@@ -113,28 +113,11 @@ export default new Command({
         ])
 
         if (query.length == 0) {
-            return i.reply({
-                embeds: [
-                    new Discord.MessageEmbed().setDescription(
-                        `\`${user.username}\` has no completed builds!`
-                    )
-                ]
-            })
+            return Responses.noCompletedBuilds(i, user.username)
         }
 
         let data = query[0]
 
-        await i.reply({
-            embeds: [
-                new Discord.MessageEmbed()
-                .setTitle(`POINTS!`)
-                .setDescription(
-                    `<@${user.id}> has :tada: ***${data.points.toFixed(2).replace(/[.,]00$/, '')}***  :tada: points in ${guild.emoji} ${guildName} ${guild.emoji}!!\n\n
-                    Number of buildings: :house: ***${data.buildings}***  :house: !!!\n
-                    Sqm of land: :corn: ***${data.landMetersSquare.toFixed(2).replace(/[.,]00$/, '')}***  :corn:\n
-                    Kilometers of roads: :motorway: ***${data.roadsKMs.toFixed(2).replace(/[.,]00$/, '')}***  :motorway:`
-                )
-            ]
-        })
+        return Responses.points(i, user.id, data.points, data.buildings, data.landMetersSquare, data.roadsKMs, guild.emoji, guildName)
     }
 })

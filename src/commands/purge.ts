@@ -1,10 +1,11 @@
 import Command from '../struct/Command.js'
-import Discord, { Message, TextChannel } from 'discord.js'
+import { Message, TextChannel } from 'discord.js'
 import Submission from '../struct/Submission.js'
 import Builder from '../struct/Builder.js'
 import areDmsEnabled from '../utils/areDmsEnabled.js'
 import { updateReviewerForPurge } from '../review/updateReviewer.js'
 import Rejection from '../struct/Rejection.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'purge',
@@ -25,41 +26,36 @@ export default new Command({
         const submitChannel = (await client.channels.fetch(guild.submitChannel)) as TextChannel
 
         let submissionMsg: Message
-        let submissionLink = '[Link could not be generated]'
+        let submissionLink = '(Link could not be generated)'
 
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
             submissionLink = `[Link](${submissionMsg.url})`
 
-            await i.reply('One moment...')
-
         } catch (e) {
-            await i.reply(
-                `'${submissionId}' is not a message ID from the build submit channel on this server... checking anyways`
-            )
         }
 
-        const originalSubmission = await Submission.findById(submissionId)
+        const originalSubmission = await Submission.findById(submissionId).exec()
 
         // Gate to ensure submission exists
         if (!originalSubmission) {
-            const rejectedSubmission = await Rejection.findById(submissionId)
+            const rejectedSubmission = await Rejection.findById(submissionId).exec()
             if (rejectedSubmission) {
-                return i.followUp('that one has already been rejected <:bonk:720758421514878998>!')
+                return Responses.submissionHasAlreadyBeenDeclined(i)
             }
 
-            return i.followUp('Could not find a submission with that ID')
+            return Responses.submissionNotFound(i)
         }
 
         // Gate to ensure submission belongs to the server that is trying to remove it
         if (originalSubmission.guildId != i.guild.id) {
-            return i.followUp('This submission belongs to another server and has not been merged. You do not have permission to purge it.')
+            return Responses.purgePermissionDenied(i)
         }
 
         // Delete submission from the database
         await originalSubmission.deleteOne().catch((err) => {
             console.log(err)
-            return i.followUp(`ERROR HAPPENED: ${err}`)
+            return Responses.errorGeneric(i, err)
         })
 
         // Update user's points
@@ -92,7 +88,7 @@ export default new Command({
                 }
             },
             { upsert: true }
-        )
+        ).exec()
 
         // Remove all bot reactions, then add a '❌' reaction
         if (submissionMsg) {
@@ -110,22 +106,17 @@ export default new Command({
                 const builder = submissionMsg.author
                 const dm = await builder.createDM()
 
-                const embed = new Discord.MessageEmbed()
-                .setTitle(`Your recent build submission has been removed.`)
-                .setDescription(
-                    `__${submissionLink}__\n\n`
-                )
-
-                await dm.send({ embeds: [embed] }).catch((err) => {
-                    return i.followUp(
-                        `\`${builder.username}#${builder.discriminator}\` has dms turned off or something went wrong while sending the dm! ${err}`
-                    )
+                await dm.send(Responses.createEmbed(
+                    `__${submissionLink}__`,
+                    `Your recent build submission has been removed.`
+                )).catch((err) => {
+                    return Responses.errorDirectMessaging(i, err)
                 })
             }
         } catch (e) {
         }
 
 
-        await i.followUp(`PURGED SUBMISSION ${submissionLink}`)
+        await Responses.submissionPurged(i, submissionLink)
     }
 })

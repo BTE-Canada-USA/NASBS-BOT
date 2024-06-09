@@ -9,6 +9,7 @@ import { addReviewToDb } from '../review/addReviewToDb.js'
 import { sendDm } from '../review/sendDm.js'
 import { addCheckmarkReaction } from '../review/addCheckmarkReaction.js'
 import { updateReviewerForAcceptance } from '../review/updateReviewer.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'review',
@@ -50,39 +51,28 @@ export default new Command({
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
         } catch (e) {
-            return i.reply(
-                `'${submissionId}' is not a valid message ID from the build submit channel!`
-            )
+            return Responses.invalidSubmissionID(i, submissionId)
         }
 
         if (submissionMsg.author.id == i.user.id) {
-            return i.reply('you cannot review your own builds <:bonk:720758421514878998>')
+            return Responses.submissionPermissionDenied(i)
         }
 
         // Check if it already got declined / purged
         const isRejected = await checkIfRejected(submissionId)
 
         // Check if it already got accepted
-        const originalSubmission = await Submission.findOne({
-            _id: submissionId
-        }).lean()
+        const originalSubmission = await Submission.findById(submissionId).exec()
 
         if (isEdit && originalSubmission == null && !isRejected) {
-            return i.reply(
-                'that one hasn\'t been graded yet <:bonk:720758421514878998>! Use `edit=False`'
-            )
+            return Responses.submissionHasNotBeenReviewed(i)
         } else if (!isEdit && originalSubmission) {
-            return i.reply(
-                'that one already got graded <:bonk:720758421514878998>! Use `edit=True`'
-            )
+            return Responses.submissionHasAlreadyBeenAccepted(i)
         } else if (isRejected) {
-            return i.reply(
-                'that one was rejected <:bonk:720758421514878998>! You cannot accept a rejected submission. The builder must resubmit.'
-            )
+            return Responses.submissionHasAlreadyBeenDeclined(i)
         }
 
         // set variables shared by all subcommands
-        await i.reply('doing stuff...')
         const builderId = submissionMsg.author.id
         const bonus = options.getNumber('bonus') || 1
         const collaborators = options.getInteger('collaborators') || 1
@@ -139,7 +129,17 @@ export default new Command({
                     sizeName = 'monumental'
                     break
             }
-            const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nBuilding type: ${sizeName}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
+            const reply = `gained **${pointsTotal} points!!!**
+            
+            *__Points breakdown:__*
+            Building type: ${sizeName}
+            Quality multiplier: x${quality}
+            Complexity multiplier: x${complexity}
+            Bonuses: x${bonus}
+            Collaborators: ${collaborators}
+            [Link](${submissionMsg.url})
+            
+            __Feedback:__ \`${feedback}\``
 
             // do review things
             await checkForRankup(builder, guildData, i)
@@ -178,7 +178,16 @@ export default new Command({
                 submissionType: 'MANY',
                 pointsTotal: pointsTotal
             }
-            const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nNumber of buildings (S/M/L): ${smallAmt}/${mediumAmt}/${largeAmt}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
+            const reply = `gained **${pointsTotal} points!!!**
+            
+            *__Points breakdown:__*
+            Number of buildings (S/M/L): ${smallAmt}/${mediumAmt}/${largeAmt}
+            Quality multiplier: x${quality}
+            Complexity multiplier: x${complexity}
+            Bonuses: x${bonus}
+            [Link](${submissionMsg.url})
+            
+            __Feedback:__ \`${feedback}\``
 
             // do review things
             await checkForRankup(builder, guildData, i)
@@ -209,7 +218,17 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
-            const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nLand area: ${sqm} sqm\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\n__Feedback:__ \`${feedback}\``
+            const reply = `gained **${pointsTotal} points!!!**
+            
+            *__Points breakdown:__*
+            Land area: ${sqm} sqm
+            Quality multiplier: x${quality}
+            Complexity multiplier: x${complexity}
+            Bonuses: x${bonus}
+            Collaborators: ${collaborators}
+            [Link](${submissionMsg.url})
+            
+            __Feedback:__ \`${feedback}\``
 
             // do review things
             await checkForRankup(builder, guildData, i)
@@ -233,7 +252,18 @@ export default new Command({
                 pointsTotal: pointsTotal
             }
 
-            const reply = `gained **${pointsTotal} points!!!**\n\n*__Points breakdown:__*\nRoad type: ${roadType}\nQuality multiplier: x${quality}\nComplexity multiplier: x${complexity}\nDistance: ${roadKMs} km\nBonuses: x${bonus}\nCollaborators: ${collaborators}\n[Link](${submissionMsg.url})\n\nFeedback: \`${feedback}\``
+            const reply = `gained **${pointsTotal} points!!!**
+            
+            *__Points breakdown:__*
+            Road type: ${roadType}
+            Quality multiplier: x${quality}
+            Complexity multiplier: x${complexity}
+            Distance: ${roadKMs} km
+            Bonuses: x${bonus}
+            Collaborators: ${collaborators}
+            [Link](${submissionMsg.url})
+            
+            Feedback: \`${feedback}\``
 
             // do review things
             await checkForRankup(builder, guildData, i)

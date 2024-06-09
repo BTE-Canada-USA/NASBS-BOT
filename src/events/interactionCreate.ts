@@ -1,6 +1,7 @@
 import Bot from '../struct/Client.js'
+import { CommandInteraction } from 'discord.js'
 
-export default async function execute(client: Bot, interaction) {
+export default async function execute(client: Bot, interaction: CommandInteraction) {
     if (
         (!client.test && interaction.guild?.id == '935926834019844097') ||
         (client.test && interaction.guild?.id != '935926834019844097')
@@ -10,11 +11,11 @@ export default async function execute(client: Bot, interaction) {
     if (!interaction.isCommand()) return
 
     if (!interaction.guild) {
-        return interaction.reply('commands must be used in servers!')
+        return interaction.reply('Commands must be used in servers.')
     }
 
     const guildData = client.guildsData.get(interaction.guild.id)
-    if (!guildData) return interaction.reply('this server is not registered :(')
+    if (!guildData) return interaction.reply('This server is not registered')
 
     const command = client.commands.get(interaction.commandName)
     if (!command) return
@@ -24,12 +25,15 @@ export default async function execute(client: Bot, interaction) {
             const member = await interaction.guild.members.fetch(interaction.user.id)
             if (!member.roles.cache.has(guildData.reviewerRole)) {
                 return await interaction.reply(
-                    'you do not have permission to use this command <:bonk:720758421514878998>'
+                    'You do not have permission to use this command.'
                 )
             }
         }
 
-        await command.run(interaction, client)
+        await interaction.deferReply()
+
+        command.run(interaction, client)
+        
     } catch (err) {
         console.log(err)
     }

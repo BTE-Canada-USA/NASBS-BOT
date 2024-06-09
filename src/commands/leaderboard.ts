@@ -184,7 +184,7 @@ export default new Command({
             embeds: pages,
             author: i.user,
             interaction: i,
-            ephemeral: true,
+            ephemeral: false,
             time: 60 * 1000,
             disableButtons: true,
             fastSkip: false,

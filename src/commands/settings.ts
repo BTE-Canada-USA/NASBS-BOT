@@ -50,11 +50,11 @@ export default new Command({
         }
     ],
     async run(i, client) {
-        if (i) {
-            return i.reply('this command is under construction.')
-        }
 
-        await i.reply('Configuring server settings...')
+        // TODO: I think this will always be true in this bot so likely this is the end of the command for now...
+        if (i) {
+            return i.editReply('this command is under construction.')
+        }
 
         const options = i.options
         const guildId = i.guild.id
@@ -71,13 +71,13 @@ export default new Command({
             }
         }
 
-        Guild.find({ id: guildId }, async function (err, guild) {
-            if (err) return i.followUp(`${err}`)
+        Guild.find({ id: guildId }, async function(err, guild) {
+            if (err) return i.editReply(`${err}`)
             await Guild.updateOne({ id: guildId }, settings, { upsert: true })
             if (guild) {
-                i.followUp('Server settings successfully updated!')
+                return i.editReply('Server settings successfully updated!')
             } else {
-                i.followUp('New server settings successfully created!')
+                return i.editReply('New server settings successfully created!')
             }
             //  client.guildsData.set(guildId, settings)
         })
