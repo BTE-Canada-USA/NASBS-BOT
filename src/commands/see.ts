@@ -56,7 +56,7 @@ export default new Command({
             const rejectionData: RejectionInterface = await Rejection.findById(submissionId).exec()
 
             return i.editReply(
-                `That submission was rejected.
+                `That submission was rejected. 
                 
                 Feedback: \`${rejectionData.feedback}\``
             )
