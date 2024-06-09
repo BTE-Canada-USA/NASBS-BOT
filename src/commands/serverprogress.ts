@@ -1,6 +1,6 @@
 import Command from '../struct/Command.js'
 import Submission from '../struct/Submission.js'
-import Discord from 'discord.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'serverpogress',
@@ -23,40 +23,43 @@ export default new Command({
         }
 
         let buildings = await Submission.aggregate([
-            { $match: {
-                guildId: server
-            }},
-            { $project: {
-                _id: 0,
-                builds: {$cond: {
-                    if: { $eq: [ '$submissionType', 'ONE' ] },
-                    then: 1,
-                    else: {$cond: { if: { $eq: [ '$submissionType', 'MANY' ] },
-                        then:
-                            { $add: [ '$smallAmt', '$mediumAmt', '$largeAmt' ] },
-                        else: 0
-                    }}
-                }}
-            }},
-            { $group: {
-                _id: 0,
-                sumBuilds: { $sum: '$builds' }
-            }}
+            {
+                $match: {
+                    guildId: server
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    builds: {
+                        $cond: {
+                            if: { $eq: ['$submissionType', 'ONE'] },
+                            then: 1,
+                            else: {
+                                $cond: {
+                                    if: { $eq: ['$submissionType', 'MANY'] },
+                                    then:
+                                        { $add: ['$smallAmt', '$mediumAmt', '$largeAmt'] },
+                                    else: 0
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: 0,
+                    sumBuilds: { $sum: '$builds' }
+                }
+            }
         ])
 
-        let numBuilds = 0;
-        if(buildings.length > 0) {
+        let numBuilds = 0
+        if (buildings.length > 0) {
             numBuilds = buildings[0].sumBuilds
         }
 
-        return i.reply({
-            embeds: [
-                new Discord.MessageEmbed()
-                    .setTitle(`Server Progress!`)
-                    .setDescription(
-                        `This server has ${numBuilds} completed buildings!`
-                    )
-            ]
-        })
+        return Responses.serverCompletedBuilds(i, numBuilds)
     }
 })

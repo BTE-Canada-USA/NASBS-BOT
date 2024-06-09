@@ -1,11 +1,13 @@
 // const Rejection = require('../base/Rejection')
 import Rejection from '../struct/Rejection.js'
 import Command from '../struct/Command.js'
-import Discord, { Message, TextChannel } from 'discord.js'
+import { Message, TextChannel } from 'discord.js'
 import { checkIfAccepted, checkIfRejected } from '../utils/checkForSubmission.js'
 import validateFeedback from '../utils/validateFeedback.js'
 import { updateReviewerForRejection } from '../review/updateReviewer.js'
 import Reviewer from '../struct/Reviewer.js'
+import Responses from '../utils/responses.js'
+import submissionRejected = Responses.submissionRejected
 
 export default new Command({
     name: 'decline',
@@ -37,28 +39,24 @@ export default new Command({
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
         } catch (e) {
-            return i.reply(
-                `'${submissionId}' is not a valid message ID from the build submit channel!`
-            )
+            return Responses.invalidSubmissionID(i, submissionId)
         }
 
         // Check if it already got graded
         const isAccepted = await checkIfAccepted(submissionMsg.id)
         if (isAccepted) {
-            return i.reply(
-                'that one already got accepted <:bonk:720758421514878998>! Use `/purge` instead'
-            )
+            return Responses.submissionHasAlreadyBeenAccepted(i)
         }
 
         // Check if it already got declined / purged
         const isRejected = await checkIfRejected(submissionMsg.id)
         if (isRejected) {
-            return i.reply('that one has already been rejected <:bonk:720758421514878998>!')
+            return Responses.submissionHasAlreadyBeenDeclined(i)
         }
 
         // check if reviewer has reviewed yet or not. new reviewers cannot decline as a first review
         // because that breaks all the stats
-        let reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
+        let reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id }).exec()
 
         if (!reviewer) {
             await Reviewer.updateOne(
@@ -79,10 +77,10 @@ export default new Command({
                     }
                 },
                 { upsert: true }
-            ).lean()
+            )
 
 
-            reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id })
+            reviewer = await Reviewer.findOne({ id: i.user.id, guildId: i.guild.id }).exec()
         }
 
         // dm builder
@@ -90,16 +88,14 @@ export default new Command({
         const builder = await client.users.fetch(builderId)
         const dm = await builder.createDM()
 
-        const embed = new Discord.MessageEmbed()
-            .setTitle(`Your recent build submission has been declined.`)
-            .setDescription(
-                `__[Submission link](${submissionMsg.url})__\nUse this feedback to improve your build and resubmit it to gain points!\n\n\`${feedback}\``
-            )
-
-        await dm.send({ embeds: [embed] }).catch((err) => {
-            return i.reply(
-                `\`${builder.username}#${builder.discriminator}\`has dms turned off or something went wrong while sending the dm! ${err}`
-            )
+        await dm.send(Responses.createEmbed(
+            `__[Submission link](${submissionMsg.url})__
+            Use this feedback to improve your build and resubmit it to gain points!
+        
+            \`${feedback}\``,
+            `Your recent build submission has been declined.`
+        )).catch((err) => {
+            return Responses.errorDirectMessaging(i, err)
         })
 
         // record rejection in db
@@ -118,8 +114,6 @@ export default new Command({
         // update reviewer
         await updateReviewerForRejection(reviewer, feedback)
 
-        return i.reply(
-            `rejected and feedback sent :weena!: \`${feedback}\`\n__[Submission link](<${submissionMsg.url}>)__`
-        )
+        return submissionRejected(i, feedback, submissionMsg.url)
     }
 })

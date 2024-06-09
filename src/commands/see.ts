@@ -30,26 +30,18 @@ export default new Command({
         try {
             submissionMsg = await submitChannel.messages.fetch(submissionId)
             submissionLink = `[Link](${submissionMsg.url})`
-            await i.reply(
-                `One moment...`
-            )
         } catch (e) {
-            await i.reply(
-                `'${submissionId}' is not a message ID from the build submit channel on this server... checking anyways`
-            )
         }
 
         // get submission from db
-        const submissionData: SubmissionInterface = await Submission.findOne({
-            _id: submissionId
-        }).lean()
+        const submissionData: SubmissionInterface = await Submission.findById(submissionId).exec()
 
         // check if submission got rejected
         const isRejected = await checkIfRejected(submissionId)
 
         // return if submission is unreviewed (doesn't exist in rejections or submissions db)
         if (!submissionData && !isRejected) {
-            return i.followUp(`this submission has not been reviewed yet!`)
+            return i.editReply(`This submission has not been reviewed yet.`)
         }
 
         let sizeName = {
@@ -61,11 +53,13 @@ export default new Command({
 
         // if its rejection, get rejection from db
         if (isRejected) {
-            const rejectionData: RejectionInterface = await Rejection.findOne({
-                _id: submissionId
-            }).lean()
+            const rejectionData: RejectionInterface = await Rejection.findById(submissionId).exec()
 
-            return i.followUp(`That submission was rejected : (\n\nFeedback: \`${rejectionData.feedback}\``)
+            return i.editReply(
+                `That submission was rejected.
+                
+                Feedback: \`${rejectionData.feedback}\``
+            )
         }
 
         summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n
@@ -99,8 +93,8 @@ export default new Command({
         __Feedback:__ \`${submissionData.feedback}\``
 
         // send the review summary
-        return i.followUp({
-            embeds: [new Discord.MessageEmbed().setTitle(`POINTS!`).setDescription(summary)]
+        return i.editReply({
+            embeds: [new Discord.MessageEmbed().setTitle(`Points`).setDescription(summary)]
         })
     }
 })

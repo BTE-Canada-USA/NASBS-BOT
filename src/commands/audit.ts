@@ -68,7 +68,7 @@ export default new Command({
         // leaderboard of reviewers by metric
         if (i.options.getSubcommand() == 'leaderboard') {
             const metric: string = options.getString('metric')
-            
+
             let guildName: string
 
             let queryFilter = []
@@ -212,7 +212,7 @@ export default new Command({
                 embeds: pages,
                 author: i.user,
                 interaction: i,
-                ephemeral: true,
+                ephemeral: false,
                 time: 60 * 1000,
                 disableButtons: true,
                 fastSkip: false,
@@ -431,7 +431,7 @@ export default new Command({
 
             // return if user does not exist
             if (!userData) {
-                return i.reply({
+                return i.editReply({
                     embeds: [
                         new Discord.MessageEmbed().setDescription(
                             `\`${user.username}#${user.discriminator}\` is not a reviewer :frowning2: <:sad_cat:873457028981481473>`
@@ -440,7 +440,7 @@ export default new Command({
                 })
             }
 
-            await i.reply({
+            await i.editReply({
                 embeds: [
                     new Discord.MessageEmbed()
                     .setTitle(`REVIEW ME PLS :AHEGAO_PLEAD:`)
