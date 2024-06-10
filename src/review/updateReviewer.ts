@@ -155,8 +155,6 @@ async function updateReviewerForAcceptance(
             }
         ).exec()
     }
-
-    i.followUp('updated reviewer!')
 }
 
 /**
