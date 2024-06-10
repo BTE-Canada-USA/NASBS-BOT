@@ -3,6 +3,7 @@ import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import Rejection, { RejectionInterface } from '../struct/Rejection.js'
 import Discord, { Message, TextChannel } from 'discord.js'
 import { checkIfRejected } from '../utils/checkForSubmission.js'
+import Responses from '../utils/responses.js'
 
 export default new Command({
     name: 'see',
@@ -55,9 +56,7 @@ export default new Command({
         if (isRejected) {
             const rejectionData: RejectionInterface = await Rejection.findById(submissionId).exec()
 
-            return i.editReply(
-                `That submission was rejected. \n\nFeedback: \`${rejectionData.feedback}\``
-            )
+            return i.editReply(Responses.createEmbed(`That submission was rejected. \n\nFeedback: \`${rejectionData.feedback}\``))
         }
 
         summary = `This submission earned **${submissionData.pointsTotal} points!!!**\n

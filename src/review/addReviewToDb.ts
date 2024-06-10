@@ -1,6 +1,7 @@
 import { CommandInteraction } from 'discord.js'
 import Submission, { SubmissionInterface } from '../struct/Submission.js'
 import Builder from '../struct/Builder.js'
+import Responses from '../utils/responses.js'
 
 // review function used by all subcommands
 /**
@@ -27,7 +28,7 @@ async function addReviewToDb(
         originalSubmission &&
         originalSubmission.submissionType !== submissionData.submissionType
     ) {
-        return i.editReply(`Can't change submission type on edit. Do \`/purge\` and then \`/review\` instead.`)
+        return i.editReply(Responses.createEmbed(`Can't change submission type on edit. Do \`/purge\` and then \`/review\` instead.`))
     }
 
     try {
@@ -72,11 +73,11 @@ async function addReviewToDb(
             ).exec()
 
             // confirmation msg
-            return i.editReply(
+            return i.editReply(Responses.createEmbed(
                 `The submission has been edited. 
                 
                 Builder has ${reviewMsg}`
-            )
+            ))
         } else {
             // for initial reviews ------------------------------------------
             // increment user's total points and building count/sqm/roadKMs
@@ -92,15 +93,15 @@ async function addReviewToDb(
             ).exec()
 
             // confirmation msg
-            return i.editReply(
+            return i.editReply(Responses.createEmbed(
                 `The submission has been successfully reviewed.
                 
                 Builder has ${reviewMsg}`
-            )
+            ))
         }
     } catch (err) {
         console.log(err)
-        return i.editReply('ERROR HAPPENED! ' + err)
+        return Responses.errorGeneric(i, err)
     }
 }
 
