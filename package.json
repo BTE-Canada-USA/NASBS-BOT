@@ -19,7 +19,10 @@
     "scripts": {
         "start": "node --loader ts-node/esm src/index.ts",
         "deploy": "node --loader ts-node/esm src/deploy.ts",
-        "merge": "node --loader ts-node/esm src/merge.ts"
+        "merge": "node --loader ts-node/esm src/merge.ts",
+        "postmerge": "npm run start",
+        "purge": "node --loader ts-node/esm src/purge.ts",
+        "postpurge": "npm run start"
     },
     "devDependencies": {
         "@types/node": "^18.11.17",
