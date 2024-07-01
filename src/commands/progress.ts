@@ -150,7 +150,7 @@ export default new Command({
         let largeBuildPoints = (largerBuildsQuery[0] === undefined) ? 0 : largerBuildsQuery[0].points
 
         // they are not above master builder
-        if (points < guildData.rank3.points && largeBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
+        if (points < guildData.rank3.points || largeBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
             return i.editReply({
                 embeds: [new Discord.MessageEmbed().setDescription(
                     `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
@@ -165,7 +165,7 @@ export default new Command({
         }
 
         // they are not above architect
-        if (points < guildData.rank4.points && largeBuildPoints < ARCHITECT_QUALITY_POINTS) {
+        if (points < guildData.rank4.points || largeBuildPoints < ARCHITECT_QUALITY_POINTS) {
             return i.editReply({
                 embeds: [new Discord.MessageEmbed().setDescription(
                     `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
@@ -198,7 +198,7 @@ export default new Command({
         // sets the value to 0 if we get no results
         let championBuildPoints = (championBuildQuery[0] === undefined) ? 0 : championBuildQuery[0].points
 
-        if (points < guildData.rank5.points && championBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
+        if (points < guildData.rank5.points || championBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
             return i.editReply({
                 embeds: [new Discord.MessageEmbed().setDescription(
                     `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
