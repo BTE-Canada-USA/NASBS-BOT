@@ -93,7 +93,7 @@ export default new Command({
             Use this feedback to improve your build and resubmit it to gain points!
         
             \`${feedback}\``,
-            `Your recent build submission has been declined.`
+            `Your recent build submission needs revision.`
         )).catch((err) => {
             return Responses.errorDirectMessaging(i, err)
         })
