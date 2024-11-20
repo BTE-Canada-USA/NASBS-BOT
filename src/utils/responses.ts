@@ -13,7 +13,7 @@ module Responses {
     }
 
     export function submissionHasAlreadyBeenDeclined(interaction) {
-        return embed(interaction, `That submission has already been rejected.`)
+        return embed(interaction, `That submission has already been declined.`)
     }
 
     export function submissionHasNotBeenReviewed(interaction) {
@@ -26,7 +26,7 @@ module Responses {
 
     export function submissionRejected(interaction, feedback, url) {
         return embed(interaction,
-            `Submission has been rejected.
+            `Submission has been declined.
             \`${feedback}\`
             __[Submission link](<${url}>)__`
         )
