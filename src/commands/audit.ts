@@ -309,17 +309,22 @@ export default new Command({
                     }
                 ])
 
-                let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
-                let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+                let feedbackCharsTotal = (submissionFeedback?.[0]?.feedback_chars ?? 0) + (rejectionFeedback?.[0]?.feedback_chars ?? 0);
+                let feedbackCharsCount = (submissionFeedback?.[0]?.total ?? 0) + (rejectionFeedback?.[0]?.total ?? 0)
+                let feedbackCharsAverage = feedbackCharsCount > 0 ? feedbackCharsTotal / feedbackCharsCount : 0
+                
+                let feedbackWordsTotal = (submissionFeedback?.[0]?.feedback_words ?? 0) + (rejectionFeedback?.[0]?.feedback_words ?? 0)
+                let feedbackWordsCount = (submissionFeedback?.[0]?.total ?? 0) + (rejectionFeedback?.[0]?.total ?? 1)
+                let feedbackWordsAverage = feedbackWordsCount > 0 ? feedbackWordsTotal / feedbackWordsCount : 0
 
                 userData = {} as ReviewerInterface
-                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total
-                userData.acceptances = acceptanceCount[0].total
-                userData.rejections = rejectionCount[0].total
+                userData.reviews = (acceptanceCount?.[0]?.total ?? 0) + (rejectionCount?.[0]?.total ?? 0)
+                userData.acceptances = acceptanceCount?.[0]?.total ?? 0
+                userData.rejections = rejectionCount?.[0]?.total ?? 0
                 userData.feedbackCharsAvg = feedbackCharsAverage
                 userData.feedbackWordsAvg = feedbackWordsAverage
-                userData.qualityAvg = averages[0].quality_average
-                userData.complexityAvg = averages[0].complexity_average
+                userData.qualityAvg = averages?.[0]?.quality_average ?? 0
+                userData.complexityAvg = averages?.[0]?.complexity_average ?? 0
 
             } else {
                 // get reviewer in current guild
@@ -416,17 +421,22 @@ export default new Command({
                     }
                 ])
 
-                let feedbackCharsAverage = (submissionFeedback[0].feedback_chars + rejectionFeedback[0].feedback_chars) / (submissionFeedback[0].total + rejectionFeedback[0].total)
-                let feedbackWordsAverage = (submissionFeedback[0].feedback_words + rejectionFeedback[0].feedback_words) / (submissionFeedback[0].total + rejectionFeedback[0].total)
+                let feedbackCharsTotal = (submissionFeedback?.[0]?.feedback_chars ?? 0) + (rejectionFeedback?.[0]?.feedback_chars ?? 0);
+                let feedbackCharsCount = (submissionFeedback?.[0]?.total ?? 0) + (rejectionFeedback?.[0]?.total ?? 0)
+                let feedbackCharsAverage = feedbackCharsCount > 0 ? feedbackCharsTotal / feedbackCharsCount : 0
+                
+                let feedbackWordsTotal = (submissionFeedback?.[0]?.feedback_words ?? 0) + (rejectionFeedback?.[0]?.feedback_words ?? 0)
+                let feedbackWordsCount = (submissionFeedback?.[0]?.total ?? 0) + (rejectionFeedback?.[0]?.total ?? 1)
+                let feedbackWordsAverage = feedbackWordsCount > 0 ? feedbackWordsTotal / feedbackWordsCount : 0
 
                 userData = {} as ReviewerInterface
-                userData.reviews = acceptanceCount[0].total + rejectionCount[0].total
-                userData.acceptances = acceptanceCount[0].total
-                userData.rejections = rejectionCount[0].total
+                userData.reviews = (acceptanceCount?.[0]?.total ?? 0) + (rejectionCount?.[0]?.total ?? 0)
+                userData.acceptances = acceptanceCount?.[0]?.total ?? 0
+                userData.rejections = rejectionCount?.[0]?.total ?? 0
                 userData.feedbackCharsAvg = feedbackCharsAverage
                 userData.feedbackWordsAvg = feedbackWordsAverage
-                userData.qualityAvg = averages[0].quality_average
-                userData.complexityAvg = averages[0].complexity_average
+                userData.qualityAvg = averages?.[0]?.quality_average ?? 0
+                userData.complexityAvg = averages?.[0]?.complexity_average ?? 0
             }
 
             // return if user does not exist

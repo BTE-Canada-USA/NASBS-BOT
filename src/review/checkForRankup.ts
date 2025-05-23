@@ -111,7 +111,7 @@ async function checkForRankup(
             }
         ])
 
-        if (userPoints[0].pointsTotal >= 200) {
+        if (userPoints?.[0]?.pointsTotal >= 200) {
             return doRankup(
                 member,
                 guild.emoji,
@@ -166,7 +166,7 @@ async function checkForRankup(
                 }
             }
         ])
-        if (userPoints[0].pointsTotal >= 500) {
+        if (userPoints?.[0]?.pointsTotal >= 500) {
             return doRankup(
                 member,
                 guild.emoji,
@@ -220,7 +220,7 @@ async function checkForRankup(
             }
         ])
 
-        if (userPoints[0].pointsTotal >= 1000) {
+        if (userPoints?.[0]?.pointsTotal >= 1000) {
             return doRankup(
                 member,
                 guild.emoji,
