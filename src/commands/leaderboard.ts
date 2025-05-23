@@ -49,7 +49,9 @@ export default new Command({
 
         if (global) {
             guildName = 'All Build Teams'
-            guild = client.guildsData.get('global')
+            let globalGuild = client.guildsData.get('global')
+            if(globalGuild)
+                guild = globalGuild 
         } else {
             // for non-global, just find within this guild
             guildName = i.guild.name
