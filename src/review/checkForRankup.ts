@@ -69,7 +69,8 @@ async function checkForRankup(
         pointsTotal < guild.rank4.points &&
         !member.roles.cache.get(guild.rank3.id)
     ) {
-        // check if builder has 50 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
+        /** check if builder meets guild specific requirements 
+        or has general requirements of 200 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria*/
         const userPoints = await Submission.aggregate([
             {
                 $match: {
@@ -110,8 +111,9 @@ async function checkForRankup(
                 }
             }
         ])
-
-        if (userPoints?.[0]?.pointsTotal >= 200) {
+        // id: 692799601983488021 is Canada 
+        // if more guilds decide to change their requirements, the requirements should be added to the db instead of hardcoded here
+        if ((guild.id == '692799601983488021' && userPoints?.[0]?.pointsTotal >= 150) || (guild.id != '692799601983488021' && userPoints?.[0]?.pointsTotal >= 200)) {
             return doRankup(
                 member,
                 guild.emoji,
@@ -126,7 +128,7 @@ async function checkForRankup(
         pointsTotal < guild.rank5.points &&
         !member.roles.cache.get(guild.rank4.id)
     ) {
-        // check if builder has 150 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
+        // check if builder has 500 pts of >1.5x quality size medium or bigger builds by summing points from ONE and MANY which meet that criteria
         const userPoints = await Submission.aggregate([
             {
                 $match: {
