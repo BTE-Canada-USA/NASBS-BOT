@@ -113,7 +113,7 @@ async function checkForRankup(
         ])
         // id: 692799601983488021 is Canada 
         // if more guilds decide to change their requirements, the requirements should be added to the db instead of hardcoded here
-        if ((i.guildID == '692799601983488021' && userPoints?.[0]?.pointsTotal >= 150) || (i.guildID != '692799601983488021' && userPoints?.[0]?.pointsTotal >= 200)) {
+        if ((String(i.guildID) == '692799601983488021' && userPoints?.[0]?.pointsTotal >= 150) || (String(i.guildID) != '692799601983488021' && userPoints?.[0]?.pointsTotal >= 200)) {
             return doRankup(
                 member,
                 guild.emoji,
