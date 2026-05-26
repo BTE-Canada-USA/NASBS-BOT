@@ -144,7 +144,7 @@ export default new Command({
 
             // alternate path for Canada
             // if more guilds decide to change their requirements, the requirements should be added to the db instead of hardcoded up top
-            if (String(i.guildID) == '692799601983488021') {
+            if (String(i.guild.id) == '692799601983488021') {
                 return i.editReply({
                     embeds: [new Discord.MessageEmbed().setDescription(
                         `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
@@ -159,7 +159,7 @@ export default new Command({
             }
 
             // default path
-            else () {
+            else {
                 return i.editReply({
                     embeds: [new Discord.MessageEmbed().setDescription(
                         `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
