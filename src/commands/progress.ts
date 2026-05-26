@@ -141,17 +141,37 @@ export default new Command({
 
         // they are not above master builder
         if (points < guildData.rank3.points || largeBuildPoints < MASTER_BUILDER_QUALITY_POINTS) {
-            return i.editReply({
-                embeds: [new Discord.MessageEmbed().setDescription(
-                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
-                    
-                    **Current rank:** ${guildData.rank2.name}
-                    
-                    **Progress towards ${guildData.rank3.name}:**
-                    ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank3.points}** points
-                    ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Good/Excellent quality Medium builds`
-                )]
-            })
+
+            // alternate path for Canada
+            // if more guilds decide to change their requirements, the requirements should be added to the db instead of hardcoded up top
+            if (String(i.guildID) == '692799601983488021') {
+                return i.editReply({
+                    embeds: [new Discord.MessageEmbed().setDescription(
+                        `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                        
+                        **Current rank:** ${guildData.rank2.name}
+                        
+                        **Progress towards ${guildData.rank3.name}:**
+                        ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank3.points}** points
+                        ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/150** points from Good/Excellent quality Medium builds`
+                    )]
+                })
+            }
+
+            // normal path
+            else () {
+                return i.editReply({
+                    embeds: [new Discord.MessageEmbed().setDescription(
+                        `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                        
+                        **Current rank:** ${guildData.rank2.name}
+                        
+                        **Progress towards ${guildData.rank3.name}:**
+                        ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank3.points}** points
+                        ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${MASTER_BUILDER_QUALITY_POINTS}** points from Good/Excellent quality Medium builds`
+                    )]
+                })
+            }
         }
 
         // they are not above architect
