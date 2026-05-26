@@ -158,7 +158,7 @@ export default new Command({
                 })
             }
 
-            // normal path
+            // default path
             else () {
                 return i.editReply({
                     embeds: [new Discord.MessageEmbed().setDescription(
