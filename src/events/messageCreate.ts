@@ -11,8 +11,8 @@ export default async function execute(client: Bot, msg: Message) {
     // production bot ignores test server, and test bot ignores other servers
     // there's probably better way to write this statement, but I don't like thinking
     if (
-        (!client.test && msg.guild?.id == '935926834019844097') ||
-        (client.test && msg.guild?.id != '935926834019844097')
+        (!client.test && ['935926834019844097', '1377005229618368652'].includes(msg.guild?.id)) ||
+        (client.test && !['935926834019844097', '1377005229618368652'].includes(msg.guild?.id))
     ) {
         return
     }

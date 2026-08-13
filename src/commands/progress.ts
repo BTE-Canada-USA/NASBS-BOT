@@ -178,18 +178,38 @@ export default new Command({
         }
 
         // they are not above architect
-        if (points < guildData.rank4.points || largeBuildPoints < ARCHITECT_QUALITY_POINTS) {
-            return i.editReply({
-                embeds: [new EmbedBuilder().setDescription(
-                    `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+        if (points < guildData.rank3.points || (i.guild.id !== '692799601983488021' && largeBuildPoints < ARCHITECT_QUALITY_POINTS) || (i.guild.id == '692799601983488021' && largeBuildPoints < 250)) {
+
+            // alternate path for Canada
+            // if more guilds decide to change their requirements, the requirements should be added to the db instead of hardcoded up top
+            if (String(i.guild.id) == '692799601983488021') {
+                return i.editReply({
+                    embeds: [new EmbedBuilder().setDescription(
+                        `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
                         
-                    **Current rank:** ${guildData.rank3.name}
+                        **Current rank:** ${guildData.rank3.name}
+                        
+                        **Progress towards ${guildData.rank4.name}:**
+                        ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank4.points}** points
+                        ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/250** points from Good/Excellent quality Medium/Large builds`
+                    )]
+                })
+            }
+
+            // default path
+            else {
+                return i.editReply({
+                    embeds: [new EmbedBuilder().setDescription(
+                        `**Progress of <@${user.id}> in ${guildData.emoji} ${guildName} ${guildData.emoji}**
+                        
+                        **Current rank:** ${guildData.rank3.name}
                     
-                    **Progress towards ${guildData.rank4.name}:**
-                    ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank4.points}** points
-                    ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${ARCHITECT_QUALITY_POINTS}** points from Good/Excellent quality Medium/Large builds`
-                )]
-            })
+                        **Progress towards ${guildData.rank4.name}:**
+                        ${points.toFixed(2).replace(/[.,]00$/, '')}**/${guildData.rank4.points}** points
+                        ${largeBuildPoints.toFixed(2).replace(/[.,]00$/, '')}**/${ARCHITECT_QUALITY_POINTS}** points from Good/Excellent quality Medium/Large builds`
+                    )]
+                })
+            }
         }
 
         let championBuildQuery = await Submission.aggregate([
